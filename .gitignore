@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment files
+.env
+server/.env
+
+# Build outputs
+client/dist/
+
+# SQLite database (runtime data)
+server/database.sqlite
+
+# Uploads (user generated content)
+server/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Vite cache
+client/.vite/
+
+# Test files
+client/test_*.js
+client/find_*.js

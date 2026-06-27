@@ -1,0 +1,115 @@
+/* Global Stylesheet for Civic Pulse */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: #EEECE3;
+  color: #1E241F;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input, textarea, button, select {
+  font-family: inherit;
+}
+
+/* Custom Scrollbar Utility */
+.cpscroll::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+.cpscroll {
+  scrollbar-width: none;
+}
+
+/* Animations */
+@keyframes cpPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0.55;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(2.6);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes cpSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cpUp {
+  from {
+    transform: translateY(12px);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes cpToast {
+  from {
+    transform: translate(-50%, 16px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes cpBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-pulse-pin {
+  animation: cpPulse 2.4s ease-out infinite;
+}
+
+.animate-spin-slow {
+  animation: cpSpin 0.8s linear infinite;
+}
+
+.animate-fade-up {
+  animation: cpUp 0.4s ease;
+}
+
+.animate-toast {
+  animation: cpToast 0.3s ease;
+}
+
+.animate-blink {
+  animation: cpBlink 1s steps(1) infinite;
+}
+
+/* Map Style Tweaks */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+}
+
+.custom-map-marker {
+  background: none;
+  border: none;
+}
