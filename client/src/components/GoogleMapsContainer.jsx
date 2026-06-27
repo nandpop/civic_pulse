@@ -19,13 +19,13 @@ const mapOptions = {
 };
 
 // ----------------- LEAFLET MAP IMPLEMENTATION -----------------
-function LeafletMap({ 
-  issues = [], 
-  onLocationSelect = null, 
+function LeafletMap({
+  issues = [],
+  onLocationSelect = null,
   selectedLocation = null,
   onMarkerClick = null,
   zoom = 14,
-  interactive = true 
+  interactive = true
 }) {
   const mapRef = useRef(null);
   const leafletMapInstance = useRef(null);
@@ -165,15 +165,15 @@ function LeafletMap({
 }
 
 // ----------------- GOOGLE MAP IMPLEMENTATION -----------------
-function GoogleMapImpl({ 
-  apiKey, 
-  issues = [], 
-  onLocationSelect = null, 
+function GoogleMapImpl({
+  apiKey,
+  issues = [],
+  onLocationSelect = null,
   selectedLocation = null,
   onMarkerClick = null,
   zoom = 14,
   interactive = true,
-  fallback 
+  fallback
 }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
@@ -296,7 +296,7 @@ function GoogleMapImpl({
                   Category: <b>{matchedIssue.cat}</b> <br />
                   Status: <b>{matchedIssue.status}</b>
                 </p>
-                <span 
+                <span
                   onClick={() => {
                     if (onMarkerClick) onMarkerClick(matchedIssue.customId);
                   }}
@@ -337,10 +337,10 @@ export default function GoogleMapsContainer(props) {
   }
 
   return (
-    <GoogleMapImpl 
-      apiKey={apiKey} 
-      {...props} 
-      fallback={() => setUseLeaflet(true)} 
+    <GoogleMapImpl
+      apiKey={apiKey}
+      {...props}
+      fallback={() => setUseLeaflet(true)}
     />
   );
 }
