@@ -348,6 +348,18 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
   }
 });
 
+// Serve static assets from client/dist in production
+const clientDistPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
+
 // Initialize database and start server
 const start = async () => {
   try {
