@@ -80,7 +80,8 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
   const [draftAddr, setDraftAddr] = useState('B-12, Lajpat Nagar, New Delhi');
   const [selectedCoords, setSelectedCoords] = useState({ lat: 28.5682, lng: 77.2410 });
 
-  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
   // Initialize and Fetch
   useEffect(() => {
@@ -617,25 +618,46 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
       {reportStep === 1 && (
         <div>
           {!selectedFile ? (
-            <button 
-              onClick={() => fileInputRef.current.click()}
-              style={{ width: '100%', border: '2px dashed #BFC6B7', backgroundColor: '#fff', borderRadius: '18px', height: '230px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer', outline: 'none' }}
+            <div 
+              style={{ width: '100%', border: '2px dashed #BFC6B7', backgroundColor: '#fff', borderRadius: '18px', height: '230px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '20px', boxSizing: 'border-box' }}
             >
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Camera size={30} weight="fill" style={{ color: '#1E8A4F' }} />
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Camera size={26} weight="fill" style={{ color: '#1E8A4F' }} />
               </div>
-              <div style={{ fontSize: '15px', fontWeight: 700 }}>Take or upload a photo</div>
-              <div style={{ fontSize: '12px', color: '#7C8479', maxWidth: '230px', textAlign: 'center', lineHeight: 1.35 }}>
-                A clear photo helps the AI categorize and helps neighbors verify the report.
+              <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo to begin</div>
+              
+              <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                <button 
+                  onClick={() => cameraInputRef.current.click()}
+                  style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
+                >
+                  <Camera size={15} weight="fill" />
+                  Take Photo
+                </button>
+                <button 
+                  onClick={() => galleryInputRef.current.click()}
+                  style={{ flex: 1, backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
+                >
+                  Upload Photo
+                </button>
               </div>
+
               <input 
                 type="file" 
-                ref={fileInputRef} 
+                ref={cameraInputRef} 
+                onChange={handlePhotoSelect} 
+                accept="image/*"
+                capture="environment"
+                style={{ display: 'none' }}
+              />
+              <input 
+                type="file" 
+                ref={galleryInputRef} 
                 onChange={handlePhotoSelect} 
                 accept="image/*"
                 style={{ display: 'none' }}
               />
-            </button>
+            </div>
           ) : (
             <div>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '230px', backgroundColor: '#E4E1D6', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -1654,25 +1676,46 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
           {reportStep === 1 && (
             <div>
               {!selectedFile ? (
-                <button 
-                  onClick={() => fileInputRef.current.click()}
-                  style={{ width: '100%', border: '2px dashed #BFC6B7', backgroundColor: '#fff', borderRadius: '20px', height: '250px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px', cursor: 'pointer', outline: 'none' }}
+                <div 
+                  style={{ width: '100%', border: '2px dashed #BFC6B7', backgroundColor: '#fff', borderRadius: '20px', height: '250px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '30px', boxSizing: 'border-box' }}
                 >
-                  <div style={{ width: '68px', height: '68px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Camera size={32} weight="fill" style={{ color: '#1E8A4F' }} />
+                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Camera size={28} weight="fill" style={{ color: '#1E8A4F' }} />
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#1E241F' }}>Upload a photo of the issue</div>
-                  <div style={{ fontSize: '12.5px', color: '#7C8479', maxWidth: '340px', textAlign: 'center', lineHeight: 1.45 }}>
-                    Our AI models will automatically try to categorize the issue and set initial parameters.
+                  <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo to begin</div>
+                  
+                  <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '380px' }}>
+                    <button 
+                      onClick={() => cameraInputRef.current.click()}
+                      style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 10px', fontSize: '13.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
+                    >
+                      <Camera size={16} weight="fill" />
+                      Take Photo
+                    </button>
+                    <button 
+                      onClick={() => galleryInputRef.current.click()}
+                      style={{ flex: 1, backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '13px 10px', fontSize: '13.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
+                    >
+                      Upload Photo
+                    </button>
                   </div>
+
                   <input 
                     type="file" 
-                    ref={fileInputRef} 
+                    ref={cameraInputRef} 
+                    onChange={handlePhotoSelect} 
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                  />
+                  <input 
+                    type="file" 
+                    ref={galleryInputRef} 
                     onChange={handlePhotoSelect} 
                     accept="image/*"
                     style={{ display: 'none' }}
                   />
-                </button>
+                </div>
               ) : (
                 <div>
                   <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '250px', backgroundColor: '#E4E1D6', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
