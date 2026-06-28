@@ -17,6 +17,19 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config(); // fallback to server/.env
 
+const getDistanceKm = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -257,15 +270,18 @@ app.patch('/api/issues/:id/status', async (req, res) => {
     await docRef.update({ status, timeline });
 
     // If status changed to Resolved, award user points for their reports if it's their issue
-    if (status === 'Resolved' && issue.by === 'You') {
+    if (status === 'Resolved') {
       const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
       if (!userSnapshot.empty) {
-        const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
         const userData = userSnapshot.docs[0].data();
-        await userRef.update({
-          resolved: (userData.resolved || 0) + 1,
-          points: (userData.points || 0) + 100
-        });
+        const userName = userData.name || 'Aarav Kapoor';
+        if (issue.by === 'You' || issue.by === userName) {
+          const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
+          await userRef.update({
+            resolved: (userData.resolved || 0) + 1,
+            points: (userData.points || 0) + 100
+          });
+        }
       }
     }
 
@@ -322,14 +338,15 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
     const inputLng = parseFloat(lng) || 77.2410;
 
     // Smart Deduplication check: Active candidate within 100m proximity
-    const activeIssuesSnapshot = await db.collection('issues')
-      .where('cat', '==', category)
-      .where('status', '!=', 'Resolved')
-      .get();
+    const activeIssuesSnapshot = await db.collection('issues').get();
 
     let duplicateTarget = null;
+    const activeDocs = activeIssuesSnapshot.docs.filter(doc => {
+      const data = doc.data();
+      return data.cat === category && data.status !== 'Resolved';
+    });
 
-    for (const doc of activeIssuesSnapshot.docs) {
+    for (const doc of activeDocs) {
       const activeIssue = doc.data();
       const dist = getDistanceKm(inputLat, inputLng, activeIssue.lat, activeIssue.lng);
       if (dist <= 0.1) { // 100m
@@ -680,11 +697,12 @@ app.patch('/api/issues/:id/approve', async (req, res) => {
     });
 
     // If the issue was reported by "You", award user points for their reports
-    if (issue.by === 'You') {
-      const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
-      if (!userSnapshot.empty) {
+    const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+    if (!userSnapshot.empty) {
+      const userData = userSnapshot.docs[0].data();
+      const userName = userData.name || 'Aarav Kapoor';
+      if (issue.by === 'You' || issue.by === userName) {
         const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
-        const userData = userSnapshot.docs[0].data();
         await userRef.update({
           resolved: (userData.resolved || 0) + 1,
           points: (userData.points || 0) + 100

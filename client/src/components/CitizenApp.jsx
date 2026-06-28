@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  DeviceMobile, 
-  MapPin, 
-  Sparkle, 
-  Crosshair, 
-  ArrowLeft, 
-  Camera, 
-  PaperPlaneTilt, 
-  Tag, 
-  UsersThree, 
-  ShieldCheck, 
-  Wrench, 
-  CheckCircle, 
-  Flag, 
-  House, 
-  Trophy, 
-  Path, 
-  Medal, 
-  Fire, 
-  Eye, 
+import {
+  DeviceMobile,
+  MapPin,
+  Sparkle,
+  Crosshair,
+  ArrowLeft,
+  Camera,
+  PaperPlaneTilt,
+  Tag,
+  UsersThree,
+  ShieldCheck,
+  Wrench,
+  CheckCircle,
+  Flag,
+  House,
+  Trophy,
+  Path,
+  Medal,
+  Fire,
+  Eye,
   Crown,
   HandPointing,
   Plus,
@@ -77,23 +77,25 @@ const getDistanceKm = (lat1, lon1, lat2, lon2) => {
   const R = 6371; // km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
 
 const isVideoUrl = (url) => {
   if (!url) return false;
-  return url.toLowerCase().includes('.mp4') || 
-         url.toLowerCase().includes('.mov') || 
-         url.toLowerCase().includes('.webm') || 
-         url.toLowerCase().includes('.m4v') ||
-         url.toLowerCase().includes('.quicktime') ||
-         url.toLowerCase().includes('video');
+  return url.toLowerCase().includes('.mp4') ||
+    url.toLowerCase().includes('.mov') ||
+    url.toLowerCase().includes('.webm') ||
+    url.toLowerCase().includes('.m4v') ||
+    url.toLowerCase().includes('.quicktime') ||
+    url.toLowerCase().includes('video');
 };
+
+const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }) {
   // Navigation & Data States
@@ -104,7 +106,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  
+
   // User Profile
   const [user, setUser] = useState({
     name: 'Aarav Kapoor',
@@ -129,8 +131,8 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
   const [draftCategory, setDraftCategory] = useState('');
   const [draftTitle, setDraftTitle] = useState('');
   const [draftSev, setDraftSev] = useState('Medium');
-  const [draftAddr, setDraftAddr] = useState('B-12, Lajpat Nagar, New Delhi');
-  const [selectedCoords, setSelectedCoords] = useState({ lat: 28.5682, lng: 77.2410 });
+  const [draftAddr, setDraftAddr] = useState('Sector 43, Gurugram, Haryana');
+  const [selectedCoords, setSelectedCoords] = useState({ lat: 28.4593, lng: 77.0725 });
 
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
@@ -340,7 +342,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           return (
             <div key={idx} style={{ display: 'flex', gap: '13px', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                <div 
+                <div
                   style={{
                     width: '30px',
                     height: '30px',
@@ -355,22 +357,22 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                   {isDone ? <CheckCircle size={16} weight="fill" /> : <CheckCircle size={16} />}
                 </div>
                 {!isLast && (
-                  <div 
-                    style={{ 
-                      width: '2px', 
+                  <div
+                    style={{
+                      width: '2px',
                       minHeight: '22px',
                       flex: 1,
-                      backgroundColor: isDone ? '#9FCBAE' : '#EAE8DE' 
+                      backgroundColor: isDone ? '#9FCBAE' : '#EAE8DE'
                     }}
                   />
                 )}
               </div>
               <div style={{ paddingBottom: '18px', textAlign: 'left' }}>
-                <div 
-                  style={{ 
-                    fontSize: '13.5px', 
+                <div
+                  style={{
+                    fontSize: '13.5px',
                     fontWeight: 700,
-                    color: isDone ? '#1E241F' : '#A7AC9F' 
+                    color: isDone ? '#1E241F' : '#A7AC9F'
                   }}
                 >
                   {step.label}
@@ -404,7 +406,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         body: formData
       });
       const data = await res.json();
-      
+
       setAiThinking(false);
       setAiDone(true);
       setDraftCategory(data.category);
@@ -442,7 +444,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         body: formData
       });
       const newIssue = await res.json();
-      
+
       if (newIssue.merged) {
         showToast('Similar report found! Merged into high-priority Mega-Ticket. +50 Points');
       } else {
@@ -451,7 +453,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       fetchIssues();
       fetchUser();
       openDetail(newIssue.customId || newIssue.id);
-      
+
       // Reset form
       setReportStep(1);
       setSelectedFile(null);
@@ -460,7 +462,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       setDraftCategory('');
       setDraftTitle('');
       setDraftSev('Medium');
-      
+
       // Trigger dashboard refresh if open elsewhere
       if (triggerRefresh) triggerRefresh();
     } catch (err) {
@@ -478,13 +480,13 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         method: 'POST'
       });
       const data = await res.json();
-      
+
       setConfirmedMap(prev => ({ ...prev, [selectedId]: true }));
       showToast('Thanks for verifying! +10 Points');
       fetchUser();
       fetchIssueDetails(selectedId);
       fetchIssues();
-      
+
       if (triggerRefresh) triggerRefresh();
     } catch (err) {
       console.error(err);
@@ -564,26 +566,26 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
     return progress[status] || 25;
   };
 
-  const trackedIssues = trackFilter === 'My Reports' 
-    ? issues.filter(i => i.by === 'You') 
+  const trackedIssues = trackFilter === 'My Reports'
+    ? issues.filter(i => getReporterName(i, user?.name) === 'You')
     : issues;
 
   // ----------------- SCREEN RENDERERS -----------------
 
   const renderHomeContent = () => (
     <div style={{ padding: '8px 18px 110px' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 14px', textAlign: 'left' }}>
         <div>
           <div style={{ fontSize: '13px', color: '#7C8479', fontWeight: 600 }}>Good afternoon, {(user?.name || 'Aarav').split(' ')[0]}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '15px', fontWeight: 700, marginTop: '1px' }}>
             <MapPin size={16} weight="fill" style={{ color: '#1E8A4F' }} />
-            Lajpat Nagar, Delhi
+            Sector 43, Gurugram
           </div>
         </div>
-        <button 
-          onClick={() => setScreen('awards')} 
+        <button
+          onClick={() => setScreen('awards')}
           style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', padding: '6px 11px 6px 7px', borderRadius: '999px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(28,33,24,0.05)', outline: 'none' }}
         >
           <span style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#1E8A4F', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>
@@ -595,11 +597,11 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
 
       {/* Map Preview */}
-      <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '172px', border: '1px solid rgba(30,36,31,0.08)', boxShadow: '0 4px 16px rgba(28,33,24,0.06)', marginBottom: '8px' }}>
-        <GoogleMapsContainer 
+      <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '240px', border: '1px solid rgba(30,36,31,0.08)', boxShadow: '0 4px 16px rgba(28,33,24,0.06)', marginBottom: '8px' }}>
+        <GoogleMapsContainer
           issues={issues}
           interactive={false}
-          zoom={13}
+          zoom={12}
         />
         <div style={{ position: 'absolute', left: '12px', top: '12px', backgroundColor: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(6px)', padding: '5px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
           <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#1E8A4F' }} />
@@ -612,7 +614,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         {['All', 'Pothole', 'Streetlight', 'Water', 'Waste'].map((n) => {
           const active = homeFilter === n;
           return (
-            <button 
+            <button
               key={n}
               onClick={() => setHomeFilter(n)}
               style={{
@@ -649,7 +651,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </div>
         ) : (
           issues.map((issue) => (
-            <button 
+            <button
               key={issue.customId}
               onClick={() => openDetail(issue.customId)}
               style={{ textAlign: 'left', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '13px', cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'flex-start', boxShadow: '0 2px 10px rgba(28,33,24,0.04)', width: '100%', outline: 'none' }}
@@ -688,11 +690,11 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
   const renderReportContent = () => (
     <div style={{ padding: '8px 18px 120px', textAlign: 'left' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0 14px', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
+          <button
             onClick={() => {
               if (reportStep > 1) setReportStep(reportStep - 1);
               else setScreen('home');
@@ -729,7 +731,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
       {/* Progress Bar */}
       <div style={{ height: '6px', backgroundColor: '#E5E3D9', borderRadius: '999px', overflow: 'hidden', marginBottom: '18px' }}>
-        <div 
+        <div
           style={{
             height: '100%',
             backgroundColor: '#1E8A4F',
@@ -744,17 +746,17 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       {reportStep === 1 && (
         <div>
           {!selectedFile ? (
-            <div 
+            <div
               style={{ width: '100%', border: '2px dashed #BFC6B7', backgroundColor: '#fff', borderRadius: '18px', height: '230px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '20px', boxSizing: 'border-box' }}
             >
               <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Camera size={26} weight="fill" style={{ color: '#1E8A4F' }} />
               </div>
               <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo/video to begin</div>
-              
+
               <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                {navigator.mediaDevices && (
-                  <button 
+                {isMobileDevice && navigator.mediaDevices && (
+                  <button
                     onClick={() => cameraInputRef.current.click()}
                     style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
                   >
@@ -762,26 +764,26 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                     Take Photo/Video
                   </button>
                 )}
-                <button 
+                <button
                   onClick={() => galleryInputRef.current.click()}
-                  style={{ flex: isMobileView ? 1 : undefined, width: isMobileView ? undefined : '100%', backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
+                  style={{ flex: isMobileDevice ? 1 : undefined, width: isMobileDevice ? undefined : '100%', backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
                 >
                   Upload Photo/Video
                 </button>
               </div>
 
-              <input 
-                type="file" 
-                ref={cameraInputRef} 
-                onChange={handlePhotoSelect} 
+              <input
+                type="file"
+                ref={cameraInputRef}
+                onChange={handlePhotoSelect}
                 accept="image/*,video/*"
                 capture="environment"
                 style={{ display: 'none' }}
               />
-              <input 
-                type="file" 
-                ref={galleryInputRef} 
-                onChange={handlePhotoSelect} 
+              <input
+                type="file"
+                ref={galleryInputRef}
+                onChange={handlePhotoSelect}
                 accept="image/*,video/*"
                 style={{ display: 'none' }}
               />
@@ -838,14 +840,14 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               <Sparkle size={10} weight="fill" /> AI Picked
             </span>
           </div>
-          
+
           {/* Category Grid Selection */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '18px' }}>
             {Object.keys(C).map((catName) => {
               const active = draftCategory === catName;
               const Icon = C[catName].i;
               return (
-                <button 
+                <button
                   key={catName}
                   onClick={() => setDraftCategory(catName)}
                   style={{
@@ -872,8 +874,8 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
           {/* Title Input */}
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#41624C', marginBottom: '7px' }}>Title</div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={draftTitle}
             onChange={(e) => setDraftTitle(e.target.value)}
             placeholder="Describe the issue briefly..."
@@ -886,7 +888,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             {['Low', 'Medium', 'High'].map((s) => {
               const active = draftSev === s;
               return (
-                <button 
+                <button
                   key={s}
                   onClick={() => setDraftSev(s)}
                   style={{
@@ -913,7 +915,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       {reportStep === 3 && (
         <div>
           <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '280px', border: '1px solid rgba(30,36,31,0.08)' }}>
-            <GoogleMapsContainer 
+            <GoogleMapsContainer
               selectedLocation={selectedCoords}
               onLocationSelect={(coords) => {
                 setSelectedCoords(coords);
@@ -984,7 +986,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       {/* Wizard Nav Button */}
       <div style={{ marginTop: '20px' }}>
         {reportStep === 4 ? (
-          <button 
+          <button
             onClick={handleSubmitIssue}
             style={{ width: '100%', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 20px -6px rgba(30,138,79,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', outline: 'none' }}
           >
@@ -992,7 +994,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             Submit report
           </button>
         ) : (
-          <button 
+          <button
             onClick={() => {
               if (reportStep === 1 && !aiDone) return;
               setReportStep(reportStep + 1);
@@ -1031,12 +1033,12 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         </div>
       );
     }
-    
+
     if (!selectedIssue) return null;
 
     return (
       <div style={{ textAlign: 'left', paddingBottom: '100px' }}>
-        
+
         {/* Photo Area */}
         <div style={{ position: 'relative', height: '210px', backgroundColor: '#EAE8DE', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
           {selectedIssue.imageUrl ? (
@@ -1048,7 +1050,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           ) : (
             <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '11px', color: '#8A8678' }}>[ ISSUE PHOTO/VIDEO ]</span>
           )}
-          <button 
+          <button
             onClick={() => setScreen('home')}
             style={{ position: 'absolute', left: '16px', top: '14px', width: '38px', height: '38px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.94)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', outline: 'none' }}
           >
@@ -1107,7 +1109,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 You cannot upvote your own report
               </div>
             ) : !confirmedMap[selectedIssue.customId] ? (
-              <button 
+              <button
                 onClick={handleConfirmIssue}
                 style={{ width: '100%', marginTop: '13px', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 6px 16px -6px rgba(30,138,79,0.5)', outline: 'none' }}
               >
@@ -1154,7 +1156,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 16px' }}>
         <div style={{ fontSize: '17px', fontWeight: 800 }}>Track your reports</div>
         {isMobileView && (
-          <button 
+          <button
             onClick={() => setScreen('home')}
             style={{ width: '36px', height: '36px', borderRadius: '11px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
           >
@@ -1168,7 +1170,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         {['My Reports', 'All Active'].map((t) => {
           const active = trackFilter === t;
           return (
-            <button 
+            <button
               key={t}
               onClick={() => setTrackFilter(t)}
               style={{
@@ -1201,7 +1203,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             const statusConfig = S[issue.status] || S['Reported'];
             const progressPercent = getStatusProgress(issue.status);
             return (
-              <button 
+              <button
                 key={issue.customId}
                 onClick={() => openDetail(issue.customId)}
                 style={{ textAlign: 'left', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '13px', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 2px 10px rgba(28,33,24,0.04)', width: '100%', outline: 'none' }}
@@ -1245,12 +1247,12 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
   const renderAwardsContent = () => (
     <div style={{ padding: '8px 18px 120px', textAlign: 'left' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 16px' }}>
         <div style={{ fontSize: '17px', fontWeight: 800 }}>Awards & Levels</div>
         {isMobileView && (
-          <button 
+          <button
             onClick={() => setScreen('home')}
             style={{ width: '36px', height: '36px', borderRadius: '11px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
           >
@@ -1279,7 +1281,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           <div style={{ fontSize: '12px', opacity: 0.85, marginBottom: '5px' }}>Points Earned</div>
         </div>
         <div style={{ height: '7px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '999px', marginTop: '12px', overflow: 'hidden' }}>
-          <div 
+          <div
             style={{
               height: '100%',
               backgroundColor: '#fff',
@@ -1320,7 +1322,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             const active = idx < user.streak;
             return (
               <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flex: 1 }}>
-                <div 
+                <div
                   style={{
                     width: '32px',
                     height: '32px',
@@ -1345,7 +1347,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
       {/* Leaderboard Shortcut Button */}
       {isMobileView && (
-        <button 
+        <button
           onClick={() => setScreen('leaderboard')}
           style={{
             width: '100%',
@@ -1383,7 +1385,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         ].map((b, i) => {
           const Icon = b.icon;
           return (
-            <button 
+            <button
               key={i}
               onClick={() => setSelectedBadge(b)}
               style={{
@@ -1401,7 +1403,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 outline: 'none'
               }}
             >
-              <div 
+              <div
                 style={{
                   width: '46px',
                   height: '46px',
@@ -1428,11 +1430,11 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
   const renderLeaderboardContent = () => (
     <div style={{ padding: isMobileView ? '8px 18px 120px' : '0', textAlign: 'left' }}>
-      
+
       {/* Header */}
       {isMobileView && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0 16px' }}>
-          <button 
+          <button
             onClick={() => setScreen('awards')}
             style={{ width: '36px', height: '36px', borderRadius: '11px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
           >
@@ -1456,11 +1458,11 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       {/* Top 3 Podium */}
       {leaderboard.length >= 3 && (
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '10px', margin: '10px 0 20px', padding: '0 8px' }}>
-          
+
           {/* 2nd Place */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
             <div style={{ position: 'relative', marginBottom: '8px' }}>
-              <div 
+              <div
                 style={{
                   width: '42px',
                   height: '42px',
@@ -1497,7 +1499,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           <div style={{ flex: 1.1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
             <div style={{ position: 'relative', marginBottom: '8px' }}>
               <Crown size={20} weight="fill" style={{ color: '#E8943A', position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%) rotate(-10deg)', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))' }} />
-              <div 
+              <div
                 style={{
                   width: '52px',
                   height: '52px',
@@ -1533,7 +1535,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           {/* 3rd Place */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
             <div style={{ position: 'relative', marginBottom: '8px' }}>
-              <div 
+              <div
                 style={{
                   width: '42px',
                   height: '42px',
@@ -1575,8 +1577,8 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         {(leaderboard.length > 3 ? leaderboard.slice(3) : leaderboard).map((player, idx) => {
           const actualRank = leaderboard.length > 3 ? idx + 4 : idx + 1;
           return (
-            <div 
-              key={player?.id || idx} 
+            <div
+              key={player?.id || idx}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1589,7 +1591,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               <div style={rankStyle(actualRank - 1)}>
                 {actualRank}
               </div>
-              <div 
+              <div
                 style={{
                   width: '32px',
                   height: '32px',
@@ -1623,7 +1625,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       {isMobileView && (
         <div style={{ padding: '24px 20px 14px', backgroundColor: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(14px)', zIndex: 10, borderBottom: '1px solid rgba(30,36,31,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#1E241F', letterSpacing: '-0.3px', flex: 1 }}>Neighborhood Map</h2>
-          <button 
+          <button
             onClick={() => setScreen('home')}
             style={{ width: '36px', height: '36px', borderRadius: '11px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
           >
@@ -1631,15 +1633,15 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </button>
         </div>
       )}
-      
+
       <div style={{ flex: 1, position: 'relative', minHeight: isMobileView ? 'none' : 'calc(100vh - 100px)' }}>
         <GoogleMapsContainer
           issues={issues}
-          zoom={14}
+          zoom={13}
           onMarkerClick={(id) => openDetail(id)}
           containerStyle={{ width: '100%', height: '100%' }}
         />
-        
+
         {/* Overlay for quick actions */}
         <div style={{ position: 'absolute', bottom: '24px', left: '20px', right: '20px', display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 1000 }}>
           <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '12px 24px', display: 'flex', gap: '8px', alignItems: 'center', boxShadow: '0 10px 25px rgba(28,33,24,0.1)', pointerEvents: 'auto' }}>
@@ -1654,17 +1656,17 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
   // ----------------- DESKTOP-SPECIFIC CONTENT LAYOUTS -----------------
 
   const renderDesktopHome = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '30px', alignItems: 'start', textAlign: 'left' }}>
-      
+    <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '35px', alignItems: 'start', textAlign: 'left' }}>
+
       {/* Left Column: Chips & Cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-        
+
         {/* Chips */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {['All', 'Pothole', 'Streetlight', 'Water', 'Waste'].map((n) => {
             const active = homeFilter === n;
             return (
-              <button 
+              <button
                 key={n}
                 onClick={() => setHomeFilter(n)}
                 style={{
@@ -1700,19 +1702,19 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             </div>
           ) : (
             issues.map((issue) => (
-              <button 
+              <button
                 key={issue.customId}
                 onClick={() => openDetail(issue.customId)}
-                style={{ 
-                  textAlign: 'left', 
-                  backgroundColor: '#fff', 
-                  border: '1px solid rgba(30,36,31,0.07)', 
-                  borderRadius: '18px', 
-                  padding: '16px 20px', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  gap: '16px', 
-                  alignItems: 'center', 
+                style={{
+                  textAlign: 'left',
+                  backgroundColor: '#fff',
+                  border: '1px solid rgba(30,36,31,0.07)',
+                  borderRadius: '18px',
+                  padding: '16px 20px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  gap: '16px',
+                  alignItems: 'center',
                   boxShadow: '0 2px 10px rgba(28,33,24,0.03)',
                   transition: 'all 0.2s',
                   width: '100%',
@@ -1750,26 +1752,24 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       </div>
 
       {/* Right Column: Digest & Preview Map */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'sticky', top: '20px' }}>
-        
-
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'sticky', top: '20px', minWidth: '360px' }}>
 
         {/* Map Card */}
         <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 12px rgba(28,33,24,0.02)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E241F' }}>Live Issue Map</span>
-            <button 
-              onClick={() => setScreen('map')} 
+            <button
+              onClick={() => setScreen('map')}
               style={{ border: 'none', background: 'none', color: '#1E8A4F', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline', outline: 'none' }}
             >
               Expand Map
             </button>
           </div>
-          <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', height: '240px', border: '1px solid rgba(30,36,31,0.08)' }}>
-            <GoogleMapsContainer 
+          <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', height: '360px', border: '1px solid rgba(30,36,31,0.08)' }}>
+            <GoogleMapsContainer
               issues={issues}
               interactive={false}
-              zoom={13}
+              zoom={12}
               onMarkerClick={(id) => openDetail(id)}
             />
           </div>
@@ -1785,12 +1785,12 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
   const renderDesktopReport = () => (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
       <div style={{ width: '100%', maxWidth: '650px', backgroundColor: '#fff', borderRadius: '24px', border: '1px solid rgba(30,36,31,0.07)', boxShadow: '0 4px 20px rgba(28,33,24,0.04)', padding: '30px' }}>
-        
+
         {/* Step Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px', textAlign: 'left', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             {reportStep > 1 && (
-              <button 
+              <button
                 onClick={() => setReportStep(reportStep - 1)}
                 style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none', flexShrink: 0 }}
               >
@@ -1825,7 +1825,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
         {/* Progress Line */}
         <div style={{ height: '6px', backgroundColor: '#E5E3D9', borderRadius: '999px', overflow: 'hidden', marginBottom: '26px' }}>
-          <div 
+          <div
             style={{
               height: '100%',
               backgroundColor: '#1E8A4F',
@@ -1841,16 +1841,16 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           {reportStep === 1 && (
             <div>
               {!selectedFile ? (
-                <div 
+                <div
                   style={{ width: '100%', border: '2px dashed #BFC6B7', backgroundColor: '#fff', borderRadius: '20px', height: '250px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', padding: '30px', boxSizing: 'border-box' }}
                 >
                   <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Camera size={28} weight="fill" style={{ color: '#1E8A4F' }} />
                   </div>
                   <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo/video to begin</div>
-                  
+
                   <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '380px' }}>
-                    <button 
+                    <button
                       onClick={() => galleryInputRef.current.click()}
                       style={{ width: '100%', backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '13px 10px', fontSize: '13.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
                     >
@@ -1858,18 +1858,18 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                     </button>
                   </div>
 
-                  <input 
-                    type="file" 
-                    ref={cameraInputRef} 
-                    onChange={handlePhotoSelect} 
+                  <input
+                    type="file"
+                    ref={cameraInputRef}
+                    onChange={handlePhotoSelect}
                     accept="image/*,video/*"
                     capture="environment"
                     style={{ display: 'none' }}
                   />
-                  <input 
-                    type="file" 
-                    ref={galleryInputRef} 
-                    onChange={handlePhotoSelect} 
+                  <input
+                    type="file"
+                    ref={galleryInputRef}
+                    onChange={handlePhotoSelect}
                     accept="image/*,video/*"
                     style={{ display: 'none' }}
                   />
@@ -1926,14 +1926,14 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                   <Sparkle size={10} weight="fill" /> AI Picked
                 </span>
               </div>
-              
+
               {/* Category Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '20px' }}>
                 {Object.keys(C).map((catName) => {
                   const active = draftCategory === catName;
                   const Icon = C[catName].i;
                   return (
-                    <button 
+                    <button
                       key={catName}
                       onClick={() => setDraftCategory(catName)}
                       style={{
@@ -1961,8 +1961,8 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
               {/* Title */}
               <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#41624C', marginBottom: '8px' }}>Title / Short Description</div>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={draftTitle}
                 onChange={(e) => setDraftTitle(e.target.value)}
                 placeholder="Describe the issue briefly..."
@@ -1975,7 +1975,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 {['Low', 'Medium', 'High'].map((s) => {
                   const active = draftSev === s;
                   return (
-                    <button 
+                    <button
                       key={s}
                       onClick={() => setDraftSev(s)}
                       style={{
@@ -2003,7 +2003,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           {reportStep === 3 && (
             <div>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '300px', border: '1px solid rgba(30,36,31,0.08)' }}>
-                <GoogleMapsContainer 
+                <GoogleMapsContainer
                   selectedLocation={selectedCoords}
                   onLocationSelect={(coords) => {
                     setSelectedCoords(coords);
@@ -2072,7 +2072,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         {/* Navigation Action Buttons */}
         <div style={{ marginTop: '26px', display: 'flex', gap: '12px' }}>
           {reportStep === 4 ? (
-            <button 
+            <button
               onClick={handleSubmitIssue}
               style={{ width: '100%', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '15px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 8px 20px -6px rgba(30,138,79,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', outline: 'none' }}
             >
@@ -2080,7 +2080,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               File Report & Alert Authorities
             </button>
           ) : (
-            <button 
+            <button
               onClick={() => {
                 if (reportStep === 1 && !aiDone) return;
                 setReportStep(reportStep + 1);
@@ -2125,7 +2125,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
     return (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: '30px', alignItems: 'start', textAlign: 'left' }}>
-        
+
         {/* Left Side: Photo / Quick Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Back Button and Photo Container */}
@@ -2142,7 +2142,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '12px', color: '#8A8678' }}>[ NO IMAGE AVAILABLE ]</span>
               </div>
             )}
-            <button 
+            <button
               onClick={() => setScreen('home')}
               style={{ position: 'absolute', left: '16px', top: '16px', width: '38px', height: '38px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.94)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', outline: 'none' }}
             >
@@ -2210,7 +2210,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                   You cannot upvote your own report
                 </div>
               ) : !confirmedMap[selectedIssue.customId] ? (
-                <button 
+                <button
                   onClick={handleConfirmIssue}
                   style={{ width: '100%', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 6px 16px -6px rgba(30,138,79,0.4)', transition: 'background-color 0.15s', outline: 'none' }}
                 >
@@ -2256,10 +2256,10 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
   const renderDesktopAwards = () => (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start', textAlign: 'left' }}>
-      
+
       {/* Left Column: level stats, streak, badges */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
+
         {/* level progression card */}
         <div style={{ background: 'linear-gradient(150deg,#1E8A4F,#15673A)', borderRadius: '20px', padding: '20px', color: '#fff', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: '-30px', top: '-30px', width: '130px', height: '130px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)' }} />
@@ -2280,7 +2280,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             <div style={{ fontSize: '13px', opacity: 0.85, marginBottom: '6px' }}>Points Earned</div>
           </div>
           <div style={{ height: '7px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '999px', marginTop: '14px', overflow: 'hidden' }}>
-            <div 
+            <div
               style={{
                 height: '100%',
                 backgroundColor: '#fff',
@@ -2321,7 +2321,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               const active = idx < user.streak;
               return (
                 <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-                  <div 
+                  <div
                     style={{
                       width: '36px',
                       height: '36px',
@@ -2358,7 +2358,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             ].map((b, i) => {
               const Icon = b.icon;
               return (
-                <button 
+                <button
                   key={i}
                   onClick={() => setSelectedBadge(b)}
                   style={{
@@ -2379,7 +2379,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                   onMouseEnter={(e) => b.earned && (e.currentTarget.style.transform = 'translateY(-2px)')}
                   onMouseLeave={(e) => b.earned && (e.currentTarget.style.transform = 'none')}
                 >
-                  <div 
+                  <div
                     style={{
                       width: '48px',
                       height: '48px',
@@ -2406,7 +2406,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
           <h4 style={{ fontSize: '16px', fontWeight: 800, color: '#1E241F', margin: 0 }}>Neighborhood Leaderboard</h4>
-          <span style={{ fontSize: '11px', color: '#1E8A4F', fontWeight: 700, backgroundColor: '#E3F1E7', padding: '4px 10px', borderRadius: '999px' }}>Lajpat Nagar</span>
+          <span style={{ fontSize: '11px', color: '#1E8A4F', fontWeight: 700, backgroundColor: '#E3F1E7', padding: '4px 10px', borderRadius: '999px' }}>Sector 43, Gurugram</span>
         </div>
         {renderLeaderboardContent()}
       </div>
@@ -2422,12 +2422,12 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         method
       });
       const data = await res.json();
-      
+
       setSwipedIssues(prev => ({ ...prev, [issueId]: action }));
       if (action === 'verify') {
         setConfirmedMap(prev => ({ ...prev, [issueId]: true }));
       }
-      
+
       showToast(action === 'verify' ? 'Thanks for verifying! +10 Points' : 'Report flagged as Fake/Fixed! +10 Points');
       fetchUser();
       fetchIssues();
@@ -2445,14 +2445,14 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
     const unverifiedIssues = issues.filter(issue => {
       if (issue.status !== 'Reported') return false;
       if (issue.guardrailStatus === 'Flagged') return false;
-      
+
       const isOwnReport = getReporterName(issue, user?.name) === 'You';
       if (isOwnReport) return false;
-      
+
       if (confirmedMap[issue.customId] || swipedIssues[issue.customId]) return false;
-      
+
       const distance = getDistanceKm(userLat, userLng, issue.lat, issue.lng);
-      return distance <= 1.0;
+      return distance <= 20.0;
     });
 
     const sortedIssues = [...unverifiedIssues].sort((a, b) => {
@@ -2471,9 +2471,9 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </div>
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1E241F', marginBottom: '8px' }}>You're All Caught Up!</h2>
           <p style={{ fontSize: '13.5px', color: '#5B655B', lineHeight: 1.4, maxWidth: '320px', marginBottom: '24px' }}>
-            No unverified reports left within 1 km of your location. Awesome job keeping your neighborhood verified!
+            No unverified reports left within 20 km of your location. Awesome job keeping your neighborhood verified!
           </p>
-          <button 
+          <button
             onClick={() => setScreen('home')}
             style={{ backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px 24px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
           >
@@ -2487,12 +2487,12 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
     return (
       <div style={{ padding: '8px 18px 110px', textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ 
-          width: '100%', 
-          maxWidth: '360px', 
-          backgroundColor: '#fff', 
-          borderRadius: '24px', 
-          border: '1px solid rgba(30,36,31,0.08)', 
+        <div style={{
+          width: '100%',
+          maxWidth: '360px',
+          backgroundColor: '#fff',
+          borderRadius: '24px',
+          border: '1px solid rgba(30,36,31,0.08)',
           boxShadow: '0 10px 30px rgba(28,33,24,0.06)',
           overflow: 'hidden',
           display: 'flex',
@@ -2509,7 +2509,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             ) : (
               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7C8479', fontWeight: 700 }}>[ NO IMAGE ]</div>
             )}
-            
+
             <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 10 }}>
               <span style={{ backgroundColor: 'rgba(22,19,14,0.85)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '7px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <MapPin size={12} weight="fill" style={{ color: '#E8943A' }} />
@@ -2523,7 +2523,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
           <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E241F', margin: 0 }}>{activeIssue.title}</h3>
-            
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#5B655B', fontSize: '13px' }}>
               <MapPin size={16} />
               <span>{activeIssue.loc}</span>
@@ -2535,14 +2535,14 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </div>
 
           <div style={{ display: 'flex', borderTop: '1px solid rgba(30,36,31,0.06)', height: '68px' }}>
-            <button 
+            <button
               onClick={() => handleVerifySwipe(activeIssue.customId, 'reject')}
               style={{ flex: 1, border: 'none', background: 'none', borderRight: '1px solid rgba(30,36,31,0.06)', color: '#C0603C', fontSize: '14.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', outline: 'none' }}
             >
               <span style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F6E7DF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800 }}>✕</span>
               Fake / Fixed
             </button>
-            <button 
+            <button
               onClick={() => handleVerifySwipe(activeIssue.customId, 'verify')}
               style={{ flex: 1, border: 'none', background: 'none', color: '#1E8A4F', fontSize: '14.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', outline: 'none' }}
             >
@@ -2582,7 +2582,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       {/* Tab Navigation Bar */}
       {screen !== 'report' && (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, height: '84px', backgroundColor: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(30,36,31,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0 14px 14px', zIndex: 30 }}>
-          <button 
+          <button
             onClick={() => setScreen('home')}
             style={navBtnStyle(screen === 'home')}
           >
@@ -2590,7 +2590,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             <span style={{ fontSize: '10px', fontWeight: 700 }}>Home</span>
           </button>
 
-          <button 
+          <button
             onClick={() => setScreen('track')}
             style={navBtnStyle(screen === 'track' || screen === 'detail')}
           >
@@ -2599,7 +2599,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </button>
 
           {/* Floating Report Button */}
-          <button 
+          <button
             onClick={() => {
               setReportStep(1);
               setScreen('report');
@@ -2609,7 +2609,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             <Plus size={26} weight="bold" style={{ color: '#fff' }} />
           </button>
 
-          <button 
+          <button
             onClick={() => setScreen('verify')}
             style={navBtnStyle(screen === 'verify')}
           >
@@ -2617,7 +2617,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             <span style={{ fontSize: '10px', fontWeight: 700 }}>Verify</span>
           </button>
 
-          <button 
+          <button
             onClick={() => setScreen('awards')}
             style={navBtnStyle(screen === 'awards' || screen === 'leaderboard')}
           >
@@ -2637,7 +2637,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       backgroundColor: '#F6F4ED',
       overflow: 'hidden'
     }}>
-      
+
       {/* Left Sidebar */}
       <div style={{
         width: '280px',
@@ -2649,7 +2649,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         borderRight: '1px solid rgba(255,255,255,0.06)',
         textAlign: 'left'
       }}>
-        
+
         {/* Brand */}
         <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <Buildings size={26} weight="fill" style={{ color: '#1E8A4F' }} />
@@ -2660,7 +2660,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         </div>
 
         {/* User Card */}
-        <button 
+        <button
           onClick={() => setScreen('awards')}
           style={{
             margin: '20px',
@@ -2703,32 +2703,32 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
         {/* Sidebar Nav links */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <button 
-            onClick={() => setScreen('home')} 
+          <button
+            onClick={() => setScreen('home')}
             style={navItemStyle(screen === 'home')}
           >
             <House size={20} weight={screen === 'home' ? 'fill' : 'regular'} />
             <span>Home Feed</span>
           </button>
-          
-          <button 
-            onClick={() => setScreen('track')} 
+
+          <button
+            onClick={() => setScreen('track')}
             style={navItemStyle(screen === 'track' || screen === 'detail')}
           >
             <Path size={20} weight={(screen === 'track' || screen === 'detail') ? 'fill' : 'regular'} />
             <span>Track Issues</span>
           </button>
 
-          <button 
-            onClick={() => setScreen('awards')} 
+          <button
+            onClick={() => setScreen('awards')}
             style={navItemStyle(screen === 'awards' || screen === 'leaderboard')}
           >
             <Trophy size={20} weight={(screen === 'awards' || screen === 'leaderboard') ? 'fill' : 'regular'} />
             <span>Awards & Badges</span>
           </button>
 
-          <button 
-            onClick={() => setScreen('verify')} 
+          <button
+            onClick={() => setScreen('verify')}
             style={navItemStyle(screen === 'verify')}
           >
             <ShieldCheck size={20} weight={screen === 'verify' ? 'fill' : 'regular'} />
@@ -2738,7 +2738,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
         {/* Quick Report issue button */}
         <div style={{ padding: '20px 16px' }}>
-          <button 
+          <button
             onClick={() => {
               setReportStep(1);
               setScreen('report');
@@ -2769,7 +2769,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
         {/* Switch View button */}
         <div style={{ padding: '0 16px 20px' }}>
-          <button 
+          <button
             onClick={() => onSwitchRole && onSwitchRole('authority')}
             style={{
               width: '100%',
@@ -2813,12 +2813,12 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         position: 'relative'
       }}>
         {/* Desk Header */}
-        <div style={{ 
-          padding: '18px 30px', 
-          backgroundColor: '#fff', 
-          borderBottom: '1px solid rgba(30,36,31,0.06)', 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          padding: '18px 30px',
+          backgroundColor: '#fff',
+          borderBottom: '1px solid rgba(30,36,31,0.06)',
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'space-between',
           zIndex: 10,
           flexShrink: 0,
@@ -2836,7 +2836,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               {screen === 'verify' && "Verify Issues"}
             </h2>
             <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>
-              {screen === 'home' && "Explore reported issues and upvote local problems near Lajpat Nagar"}
+              {screen === 'home' && "Explore reported issues and upvote local problem"}
               {screen === 'report' && "Go through the steps to alert the municipality of street issues"}
               {screen === 'detail' && "View verification progress and timeline steps for this issue"}
               {screen === 'track' && "Check on the status of your reports and active community issues"}
@@ -2850,10 +2850,10 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
         {/* Desk Body Content Area */}
         <div style={{ flex: 1, padding: screen === 'map' ? 0 : '30px', display: 'flex', justifyContent: 'center', overflowY: screen === 'map' ? 'hidden' : 'auto' }}>
-          <div style={{ 
-            width: '100%', 
-            maxWidth: screen === 'map' ? 'none' : '1000px',
-            animation: 'cpFadeIn .3s ease' 
+          <div style={{
+            width: '100%',
+            maxWidth: screen === 'map' ? 'none' : (screen === 'home' ? '1200px' : '1000px'),
+            animation: 'cpFadeIn .3s ease'
           }}>
             {screen === 'home' && renderDesktopHome()}
             {screen === 'report' && renderDesktopReport()}
@@ -2884,15 +2884,15 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
       {/* Badge Modal Detail Popup */}
       {selectedBadge && (
-        <div 
+        <div
           onClick={() => setSelectedBadge(null)}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(22,19,14,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999 }}
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             style={{ width: '310px', backgroundColor: '#fff', borderRadius: '24px', padding: '24px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', animation: 'cpUp .25s ease' }}
           >
-            <div 
+            <div
               style={{
                 width: '70px',
                 height: '70px',
@@ -2929,7 +2929,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 {selectedBadge.progress}
               </span>
             </div>
-            <button 
+            <button
               onClick={() => setSelectedBadge(null)}
               style={{ width: '100%', marginTop: '20px', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(30,138,79,0.3)', outline: 'none' }}
             >

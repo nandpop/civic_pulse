@@ -254,6 +254,82 @@ export async function initDb() {
       await issuesColl.doc(it.customId).set(it);
     }
   }
+
+  // Seed Gurugram issues if they do not exist
+  const gurugramIssues = [
+    {
+      customId: '#1051',
+      title: 'Water clogging near Sector 43 metro station',
+      cat: 'Water',
+      status: 'Reported',
+      confirms: 1,
+      dist: '0.3 km',
+      when: '40m ago',
+      by: 'Neha Goel',
+      sev: 'Medium',
+      loc: 'Sector 43, Gurugram',
+      lat: 28.4598,
+      lng: 77.0732,
+      imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/water_pipeline_leak_flooding_lane.jpg'
+    },
+    {
+      customId: '#1052',
+      title: 'Damaged street light near Golf Course Road',
+      cat: 'Streetlight',
+      status: 'Reported',
+      confirms: 2,
+      dist: '0.5 km',
+      when: '2h ago',
+      by: 'Rohan Malhotra',
+      sev: 'Low',
+      loc: 'Sector 43, Gurugram',
+      lat: 28.4612,
+      lng: 77.0708,
+      imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/streetlight_out.avif'
+    },
+    {
+      customId: '#1053',
+      title: 'Open garbage dump corner',
+      cat: 'Waste',
+      status: 'Reported',
+      confirms: 1,
+      dist: '0.7 km',
+      when: '4h ago',
+      by: 'Amit Verma',
+      sev: 'Medium',
+      loc: 'Sector 43, Gurugram',
+      lat: 28.4565,
+      lng: 77.0695,
+      imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/garbage_overflow.jpg'
+    }
+  ];
+
+  for (const gi of gurugramIssues) {
+    const doc = await issuesColl.doc(gi.customId).get();
+    if (!doc.exists) {
+      const order = { 'Reported': 0, 'Verified': 1, 'In Progress': 2, 'Resolved': 3 };
+      const lvl = order[gi.status] !== undefined ? order[gi.status] : 0;
+      const timelineSteps = [
+        { label: 'Reported', who: `by ${gi.by} · ${gi.when}`, reach: 0 },
+        { label: 'Community verifying', who: `${gi.confirms} neighbors confirmed`, reach: 0 },
+        { label: 'Verified by city', who: 'Municipal Corporation of Delhi', reach: 1 },
+        { label: 'Crew assigned', who: 'Field team dispatched', reach: 2 },
+        { label: 'Resolved', who: 'Issue closed', reach: 3 }
+      ];
+      gi.timeline = timelineSteps.filter(t => lvl >= t.reach);
+      gi.createdAt = new Date().toISOString();
+      gi.assignedAgent = null;
+      gi.resolutionImageUrl = null;
+      gi.mergedReports = [];
+      gi.guardrailStatus = 'Approved';
+      gi.dueTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      gi.slaHours = 24;
+      gi.department = 'MCD Road Works Dept';
+      
+      console.log(`Seeding Gurugram issue ${gi.customId}...`);
+      await issuesColl.doc(gi.customId).set(gi);
+    }
+  }
   } catch (err) {
     if (err.message && err.message.includes('Could not load the default credentials')) {
       console.error('\n⚠️  [Firestore Error]: Could not load Google Cloud credentials.');

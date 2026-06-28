@@ -56,6 +56,10 @@ function LeafletMap({
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
       leafletMapInstance.current = map;
 
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 150);
+
       // Handle map clicks
       if (interactive && onLocationSelect) {
         map.on('click', (e) => {
