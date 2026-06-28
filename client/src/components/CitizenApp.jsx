@@ -76,7 +76,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
   // Navigation & Data States
   const [screen, setScreen] = useState('home'); // 'home', 'report', 'detail', 'profile'
   const [homeFilter, setHomeFilter] = useState('All');
-  const [trackFilter, setTrackFilter] = useState('All Active');
+  const [trackFilter, setTrackFilter] = useState('My Reports');
   const [issues, setIssues] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -504,16 +504,6 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         </button>
       </div>
 
-      {/* AI Smart Digest */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', background: 'linear-gradient(180deg,#E9F4EC,#E3F1E7)', border: '1px solid rgba(30,138,79,0.18)', borderRadius: '16px', padding: '12px 13px', marginBottom: '14px', textAlign: 'left' }}>
-        <div style={{ width: '30px', height: '30px', borderRadius: '9px', backgroundColor: '#1E8A4F', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Sparkle size={16} weight="fill" style={{ color: '#fff' }} />
-        </div>
-        <div style={{ lineHeight: 1.3 }}>
-          <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#176B3D' }}>Civic Pulse AI · smart digest</div>
-          <div style={{ fontSize: '12px', color: '#41624C', marginTop: '2px' }}>2 nearby reports look like the same pothole. Verifying merges them automatically.</div>
-        </div>
-      </div>
 
       {/* Map Preview */}
       <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '172px', border: '1px solid rgba(30,36,31,0.08)', boxShadow: '0 4px 16px rgba(28,33,24,0.06)', marginBottom: '8px' }}>
@@ -1002,7 +992,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
           {/* Confirmation Action Button */}
           {selectedIssue.status !== 'In Progress' && selectedIssue.status !== 'Resolved' && (
-            selectedIssue.by === 'You' ? (
+            getReporterName(selectedIssue, user?.name) === 'You' ? (
               <div style={{ width: '100%', marginTop: '13px', backgroundColor: '#F1EFE6', color: '#7C8479', borderRadius: '14px', padding: '14px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(30,36,31,0.06)' }}>
                 <Info size={18} weight="fill" style={{ color: '#8A8678' }} />
                 You cannot upvote your own report
@@ -1066,7 +1056,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
       {/* Toggle filters between My Reports and All Active */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        {['All Active', 'My Reports'].map((t) => {
+        {['My Reports', 'All Active'].map((t) => {
           const active = trackFilter === t;
           return (
             <button 
@@ -1653,16 +1643,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       {/* Right Column: Digest & Preview Map */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'sticky', top: '20px' }}>
         
-        {/* AI Digest */}
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', background: 'linear-gradient(180deg,#E9F4EC,#E3F1E7)', border: '1px solid rgba(30,138,79,0.18)', borderRadius: '20px', padding: '20px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#1E8A4F', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Sparkle size={20} weight="fill" style={{ color: '#fff' }} />
-          </div>
-          <div style={{ lineHeight: 1.4 }}>
-            <div style={{ fontSize: '14px', fontWeight: 800, color: '#176B3D' }}>Civic Pulse AI · smart digest</div>
-            <div style={{ fontSize: '12.5px', color: '#41624C', marginTop: '4px' }}>2 nearby reports look like the same pothole. Verifying merges them automatically.</div>
-          </div>
-        </div>
+
 
         {/* Map Card */}
         <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 12px rgba(28,33,24,0.02)' }}>
@@ -2094,7 +2075,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           {/* Action upvote button */}
           {selectedIssue.status !== 'In Progress' && selectedIssue.status !== 'Resolved' && (
             <div style={{ marginTop: '18px' }}>
-              {selectedIssue.by === 'You' ? (
+              {getReporterName(selectedIssue, user?.name) === 'You' ? (
                 <div style={{ width: '100%', backgroundColor: '#F1EFE6', color: '#7C8479', borderRadius: '14px', padding: '14px', fontSize: '13.5px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(30,36,31,0.06)' }}>
                   <Info size={18} weight="fill" style={{ color: '#8A8678' }} />
                   You cannot upvote your own report

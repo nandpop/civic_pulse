@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  WarningCircle, 
-  ShieldCheck, 
-  Timer, 
-  CheckCircle, 
-  TrendUp, 
-  Copy, 
+import {
+  WarningCircle,
+  ShieldCheck,
+  Timer,
+  CheckCircle,
+  TrendUp,
+  Copy,
   ClockCountdown,
   Buildings,
   Sparkle,
@@ -53,7 +53,7 @@ const FIELD_CREWS = ['Team Alpha', 'Team Beta', 'Team Gamma', 'Contractor Sharma
 const getStageDueTime = (issue) => {
   if (!issue) return null;
   const created = issue.createdAt ? new Date(issue.createdAt).getTime() : new Date().getTime() - 2 * 60 * 60 * 1000;
-  
+
   const categorySlas = {
     'Pothole': 24,
     'Streetlight': 12,
@@ -140,9 +140,9 @@ function SlaTimer({ issue }) {
   }
 
   return (
-    <span 
-      style={{ 
-        color: isOverdue ? '#C0603C' : '#A9801C', 
+    <span
+      style={{
+        color: isOverdue ? '#C0603C' : '#A9801C',
         backgroundColor: isOverdue ? '#F6E7DF' : '#F6EDD2',
         padding: '3px 8px',
         borderRadius: '6px',
@@ -184,7 +184,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
       const res = await fetch('/api/issues');
       const data = await res.json();
       setIssues(data);
-      
+
       // Keep selected issue in sync
       if (selectedId) {
         const updated = data.find(i => i.customId === selectedId);
@@ -333,11 +333,11 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
       const bResolved = b.status === 'Resolved';
       if (aResolved && !bResolved) return 1;
       if (!aResolved && bResolved) return -1;
-      
+
       if (aResolved && bResolved) {
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
       }
-      
+
       const aDue = a.dueTime ? new Date(a.dueTime).getTime() : Infinity;
       const bDue = b.dueTime ? new Date(b.dueTime).getTime() : Infinity;
       return aDue - bDue;
@@ -352,23 +352,23 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
 
     return (
       <div style={{ display: 'grid', gridTemplateColumns: selectedIssue ? '1.2fr 0.8fr' : '1fr', gap: '24px', height: 'calc(100vh - 100px)', overflow: 'hidden' }}>
-        
+
         {/* Operations Content Left Area */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', paddingRight: '4px' }} className="cpscroll">
-          
+
           {/* Live Heatmap Area */}
           <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '20px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14.5px', fontWeight: 800 }}>
                 <MapPin size={18} weight="fill" style={{ color: '#1E8A4F' }} />
-                <span>Geospatial Operations Heatmap</span>
+                <span>Geospatial Operations Map</span>
               </div>
               <span style={{ fontSize: '11px', color: '#7C8479', fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
                 {issues.filter(i => i.status !== 'Resolved').length} Unresolved Issues Online
               </span>
             </div>
             <div style={{ height: '240px', borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(30,36,31,0.08)' }}>
-              <GoogleMapsContainer 
+              <GoogleMapsContainer
                 issues={issues}
                 zoom={13}
                 onMarkerClick={handleMarkerClick}
@@ -379,7 +379,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
           {/* View Toggles & Triage Actions */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
             <div style={{ display: 'flex', gap: '6px', backgroundColor: '#E2E0D6', padding: '4px', borderRadius: '12px' }}>
-              <button 
+              <button
                 onClick={() => setOpView('kanban')}
                 style={{
                   padding: '6px 14px',
@@ -396,7 +396,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
               >
                 Kanban Board
               </button>
-              <button 
+              <button
                 onClick={() => setOpView('triage')}
                 style={{
                   padding: '6px 14px',
@@ -414,7 +414,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                 Triage List ({activeIssueList.length})
               </button>
             </div>
-            
+
             {flaggedIssueList.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#F6E7DF', color: '#C0603C', padding: '6px 12px', borderRadius: '10px', fontSize: '11.5px', fontWeight: 700 }}>
                 <WarningCircle size={14} weight="fill" />
@@ -430,7 +430,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                 const colIssues = activeIssueList.filter(i => i.status === col);
                 return (
                   <div key={col} style={{ backgroundColor: 'rgba(255,255,255,0.45)', borderRadius: '16px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid rgba(30,36,31,0.04)' }}>
-                    
+
                     {/* Column Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(30,36,31,0.06)', paddingBottom: '8px' }}>
                       <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1E241F' }}>{col}</span>
@@ -445,7 +445,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                         const hasBreached = isTicketOverdue(issue.dueTime, issue.status);
                         const isSelected = selectedId === issue.customId;
                         return (
-                          <div 
+                          <div
                             key={issue.customId}
                             onClick={() => {
                               setSelectedId(issue.customId);
@@ -453,15 +453,15 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                             }}
                             style={{
                               backgroundColor: '#fff',
-                              border: isSelected 
-                                ? '2px solid #1E8A4F' 
-                                : hasBreached 
-                                  ? '1.5px solid #C0603C' 
+                              border: isSelected
+                                ? '2px solid #1E8A4F'
+                                : hasBreached
+                                  ? '1.5px solid #C0603C'
                                   : '1px solid rgba(30,36,31,0.06)',
                               borderRadius: '12px',
                               padding: '11px',
-                              boxShadow: hasBreached 
-                                ? '0 4px 10px rgba(192,96,60,0.07)' 
+                              boxShadow: hasBreached
+                                ? '0 4px 10px rgba(192,96,60,0.07)'
                                 : '0 2px 6px rgba(0,0,0,0.015)',
                               cursor: 'pointer',
                               textAlign: 'left',
@@ -476,11 +476,11 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                                 {issue.cat}
                               </span>
                             </div>
-                            
+
                             <div style={{ fontSize: '12px', fontWeight: 800, color: '#1E241F', marginTop: '6px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                               {issue.title}
                             </div>
-                            
+
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', color: '#7C8479', marginTop: '6px' }}>
                               <MapPin size={12} />
                               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{issue.loc}</span>
@@ -513,7 +513,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
           {/* VIEW: TRIAGE QUEUE LIST */}
           {opView === 'triage' && (
             <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
-              
+
               {/* Table Header */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr 0.9fr 0.7fr 0.9fr', gap: '10px', padding: '0 8px 10px', borderBottom: '1px solid rgba(30,36,31,0.06)', fontSize: '10.5px', fontWeight: 700, color: '#A7AC9F', uppercase: true, tracking: '0.04em' }}>
                 <div>TICKET DETAILS</div>
@@ -530,7 +530,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                   const isSelected = selectedId === issue.customId;
                   const colorConfig = C[issue.cat] || C['Other'];
                   return (
-                    <div 
+                    <div
                       key={issue.customId}
                       onClick={() => {
                         setSelectedId(issue.customId);
@@ -599,14 +599,14 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
         {/* Operations Ticket Details Panel Right Area */}
         {selectedIssue && (
           <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', textAlign: 'left' }} className="cpscroll animate-fade-up">
-            
+
             {/* Panel Header */}
             <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(30,36,31,0.06)', paddingBottom: '14px', marginBottom: '14px', width: '100%', justifyContent: 'space-between' }}>
               <div>
                 <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: '11.5px', color: '#7C8479' }}>TICKET DETAILS · {selectedIssue.customId}</span>
                 <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#1E241F', marginTop: '2px' }}>{selectedIssue.title}</h3>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setSelectedId(null);
                   setSelectedIssue(null);
@@ -653,8 +653,8 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
               <div style={{ fontSize: '11.5px', lineHeight: 1.25 }}>
                 <span style={{ fontWeight: 800, color: selectedIssue.guardrailStatus === 'Flagged' ? '#9A4526' : '#2C5D9E' }}>AI Security Guardrail: </span>
                 <span style={{ fontWeight: 600, color: '#41624C' }}>
-                  {selectedIssue.guardrailStatus === 'Flagged' 
-                    ? 'Warning: Flagged by auto-moderator for blurriness/irrelevance.' 
+                  {selectedIssue.guardrailStatus === 'Flagged'
+                    ? 'Warning: Flagged by auto-moderator for blurriness/irrelevance.'
                     : 'Passed check. Image content verified as safe.'}
                 </span>
               </div>
@@ -663,7 +663,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
             {/* Images display: Before and After side-by-side */}
             <div style={{ marginBottom: '16px' }}>
               <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#41624C', marginBottom: '6px' }}>Verification Media</div>
-              
+
               {selectedIssue.resolutionImageUrl ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   {/* Original photo */}
@@ -733,12 +733,12 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
 
             {/* Dispatch / Resolution actions */}
             <div style={{ marginTop: 'auto', paddingTop: '10px' }}>
-              
+
               {/* Action 1: Dispatch crew (only for Reported or Verified status) */}
               {(selectedIssue.status === 'Reported' || selectedIssue.status === 'Verified') && (
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: 700, color: '#41624C', display: 'block', marginBottom: '6px' }}>Dispatch Field Crew / Vendor</label>
-                  <select 
+                  <select
                     onChange={(e) => handleAssignAgent(selectedIssue.customId, e.target.value)}
                     defaultValue=""
                     style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #1E8A4F', fontSize: '13px', fontWeight: 700, outline: 'none', cursor: 'pointer', backgroundColor: '#fff', color: '#176B3D' }}
@@ -761,9 +761,9 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                   <p style={{ fontSize: '11px', color: '#5B655B', margin: 0 }}>
                     Please upload a photo of the completed work to submit it for municipal moderator review.
                   </p>
-                  
-                  <input 
-                    type="file" 
+
+                  <input
+                    type="file"
                     id="evidence-file-input"
                     accept="image/*"
                     disabled={uploadingEv}
@@ -776,7 +776,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                     style={{ display: 'none' }}
                   />
 
-                  <button 
+                  <button
                     disabled={uploadingEv}
                     onClick={() => document.getElementById('evidence-file-input').click()}
                     style={{
@@ -810,14 +810,14 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                     👷‍♂️ Worker submitted resolution. Please inspect the photos and approve.
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
+                    <button
                       onClick={() => handleApproveResolution(selectedIssue.customId)}
                       style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
                     >
                       <Check size={14} weight="bold" />
                       Approve & Close
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleRejectResolution(selectedIssue.customId)}
                       style={{ flex: 1, backgroundColor: '#fff', border: '1.5px solid #C0603C', color: '#C0603C', borderRadius: '12px', padding: '12px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
                     >
@@ -856,12 +856,12 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
     const wardData = wardsList.map(wardName => {
       const wardIssues = issues.filter(i => i.loc.includes(wardName));
       const resolved = wardIssues.filter(i => i.status === 'Resolved');
-      
+
       let avgDays = 1.5;
       if (resolved.length > 0) {
         const totalMs = resolved.reduce((acc, curr) => {
           const seedOffset = parseInt(curr.customId.replace('#', ''), 10) || 12;
-          const duration = Math.max(10800000, (seedOffset % 5) * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000); 
+          const duration = Math.max(10800000, (seedOffset % 5) * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000);
           return acc + duration;
         }, 0);
         avgDays = Math.round((totalMs / resolved.length / (1000 * 60 * 60 * 24)) * 10) / 10;
@@ -892,8 +892,8 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
       const score = 4.0 + (idNum % 11) / 10.0;
       totalSatisfaction += score;
     });
-    const avgSatisfaction = resolvedIssues.length > 0 
-      ? Math.round((totalSatisfaction / resolvedIssues.length) * 10) / 10 
+    const avgSatisfaction = resolvedIssues.length > 0
+      ? Math.round((totalSatisfaction / resolvedIssues.length) * 10) / 10
       : 4.6;
 
     const renderStars = (score) => {
@@ -913,7 +913,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', textAlign: 'left', animation: 'cpFadeIn .3s ease' }}>
-        
+
         {/* KPI metrics cards row */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '14px' }}>
           <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
@@ -944,7 +944,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
 
         {/* Charts & embeds layout */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
-          
+
           <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '22px', padding: '20px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1.5px solid rgba(30,36,31,0.06)', paddingBottom: '10px' }}>
               <div>
@@ -956,7 +956,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
 
             {/* Styled embedded visual charts */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '10px 0' }}>
-              
+
               {/* Avg Resolution Time chart */}
               <div>
                 <div style={{ fontSize: '12px', fontWeight: 800, color: '#41624C', marginBottom: '10px' }}>Average Resolution Time by Ward (Days)</div>
@@ -1011,7 +1011,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
 
           {/* AI Automated department metrics */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
+
             <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '22px', padding: '18px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
               <div style={{ display: 'flex', items: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 800, color: '#1E241F', marginBottom: '12px' }}>
                 <Sparkle size={16} weight="fill" style={{ color: '#1E8A4F' }} />
@@ -1059,7 +1059,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
       backgroundColor: '#F6F4ED',
       overflow: 'hidden'
     }}>
-      
+
       {/* Sidebar Navigation */}
       <div style={{
         width: '280px',
@@ -1071,7 +1071,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
         borderRight: '1px solid rgba(255,255,255,0.06)',
         textAlign: 'left'
       }}>
-        
+
         {/* Brand header */}
         <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <Buildings size={26} weight="fill" style={{ color: '#1E8A4F' }} />
@@ -1102,8 +1102,8 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
 
         {/* Navigation links */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <button 
-            onClick={() => setSidebarTab('operations')} 
+          <button
+            onClick={() => setSidebarTab('operations')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -1126,9 +1126,9 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
             <Timer size={20} weight={sidebarTab === 'operations' ? 'fill' : 'regular'} />
             <span>Operations Triage</span>
           </button>
-          
-          <button 
-            onClick={() => setSidebarTab('analytics')} 
+
+          <button
+            onClick={() => setSidebarTab('analytics')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -1155,7 +1155,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
 
         {/* Switch View button */}
         <div style={{ padding: '20px 16px', marginTop: 'auto' }}>
-          <button 
+          <button
             onClick={() => onSwitchRole && onSwitchRole('citizen')}
             style={{
               width: '100%',
@@ -1197,14 +1197,14 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
         flexDirection: 'column',
         position: 'relative'
       }}>
-        
+
         {/* Header Bar */}
-        <div style={{ 
-          padding: '18px 30px', 
-          backgroundColor: '#fff', 
-          borderBottom: '1px solid rgba(30,36,31,0.06)', 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          padding: '18px 30px',
+          backgroundColor: '#fff',
+          borderBottom: '1px solid rgba(30,36,31,0.06)',
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'space-between',
           zIndex: 10,
           flexShrink: 0,
@@ -1215,12 +1215,12 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
               {sidebarTab === 'operations' ? 'Live Operations Desk' : 'Executive Analytics Desk'}
             </h2>
             <div style={{ fontSize: '11.5px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>
-              {sidebarTab === 'operations' 
-                ? 'Triage incoming neighborhood requests, monitor SLAs, and dispatch field crews' 
+              {sidebarTab === 'operations'
+                ? 'Triage incoming neighborhood requests, monitor SLAs, and dispatch field crews'
                 : 'Aggregated GIS metrics, satisfaction reviews, and performance summaries'}
             </div>
           </div>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {/* Switcheable header indicators */}
             <span style={{ fontSize: '11px', color: '#176B3D', backgroundColor: '#E3F1E7', padding: '6px 12px', borderRadius: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
