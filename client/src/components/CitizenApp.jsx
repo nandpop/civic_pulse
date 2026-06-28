@@ -1596,6 +1596,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
               issues={issues}
               interactive={false}
               zoom={13}
+              onMarkerClick={(id) => openDetail(id)}
             />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px', fontSize: '12.5px', fontWeight: 700, color: '#1E8A4F' }}>
