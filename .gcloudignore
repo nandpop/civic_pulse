@@ -1,0 +1,23 @@
+# Exclude Git files
+.git/
+.gitignore
+
+# Exclude dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Exclude backend environment files containing server secrets
+server/.env
+
+# Exclude local build artifacts
+client/dist/
+client/.vite/
+
+# Exclude local SQLite and runtime uploads
+server/database.sqlite
+server/uploads/
+
+# Exclude logs
+*.log
+npm-debug.log*
