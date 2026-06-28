@@ -26,6 +26,16 @@ import {
 
 import GoogleMapsContainer from './GoogleMapsContainer';
 
+const isVideoUrl = (url) => {
+  if (!url) return false;
+  return url.toLowerCase().includes('.mp4') || 
+         url.toLowerCase().includes('.mov') || 
+         url.toLowerCase().includes('.webm') || 
+         url.toLowerCase().includes('.m4v') ||
+         url.toLowerCase().includes('.quicktime') ||
+         url.toLowerCase().includes('video');
+};
+
 // Color mappings based on issue category
 const C = {
   'Pothole': { c: '#C0603C', b: '#F6E7DF', marker: '#C0603C' },
@@ -668,14 +678,22 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   {/* Original photo */}
                   <div style={{ borderRadius: '12px', overflow: 'hidden', height: '130px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative' }}>
-                    <img src={selectedIssue.imageUrl} alt="Before" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {isVideoUrl(selectedIssue.imageUrl) ? (
+                      <video src={selectedIssue.imageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <img src={selectedIssue.imageUrl} alt="Before" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
                     <div style={{ position: 'absolute', bottom: '6px', left: '6px', backgroundColor: 'rgba(22,19,14,0.6)', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
                       BEFORE (Citizen)
                     </div>
                   </div>
                   {/* Resolution photo */}
                   <div style={{ borderRadius: '12px', overflow: 'hidden', height: '130px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative' }}>
-                    <img src={selectedIssue.resolutionImageUrl} alt="After" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {isVideoUrl(selectedIssue.resolutionImageUrl) ? (
+                      <video src={selectedIssue.resolutionImageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <img src={selectedIssue.resolutionImageUrl} alt="After" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
                     <div style={{ position: 'absolute', bottom: '6px', left: '6px', backgroundColor: '#1E8A4F', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
                       AFTER (Worker)
                     </div>
@@ -684,7 +702,11 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
               ) : (
                 <div style={{ borderRadius: '14px', overflow: 'hidden', height: '160px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative', backgroundColor: '#E4E1D6' }}>
                   {selectedIssue.imageUrl ? (
-                    <img src={selectedIssue.imageUrl} alt="Original report" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    isVideoUrl(selectedIssue.imageUrl) ? (
+                      <video src={selectedIssue.imageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <img src={selectedIssue.imageUrl} alt="Original report" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )
                   ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#7C8479', fontWeight: 700 }}>No Image Available</div>
                   )}

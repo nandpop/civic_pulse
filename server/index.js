@@ -341,7 +341,7 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
 
     if (aiClient) {
       try {
-        const imagePart = {
+        const mediaPart = {
           inlineData: {
             data: req.file.buffer.toString('base64'),
             mimeType: req.file.mimetype
@@ -349,19 +349,19 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
         };
 
         const prompt = `
-          Analyze this civic issue photo. Output a clean JSON object containing:
+          Analyze this civic issue photo or video. Output a clean JSON object containing:
           1. "category": Must be exactly one of: "Pothole", "Streetlight", "Water", "Waste", "Tree / Park", "Other".
           2. "title": A brief, descriptive title (e.g. "Broken streetlamp pole").
           3. "severity": Must be exactly one of: "Low", "Medium", "High".
           4. "confidence": Estimate your classification confidence percentage (e.g. "95%").
-          5. "guardrail": Must be exactly one of: "Approved", "Flagged". Return "Flagged" if the photo is blurry, irrelevant to civic infrastructure issues (like random selfies, text, documents), or contains inappropriate content. Otherwise, return "Approved".
+          5. "guardrail": Must be exactly one of: "Approved", "Flagged". Return "Flagged" if the media is blurry, irrelevant to civic infrastructure issues (like random selfies, text, documents), or contains inappropriate content. Otherwise, return "Approved".
           
           Do not include markdown blocks, write only raw JSON.
         `;
 
         const response = await aiClient.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: [prompt, imagePart]
+          contents: [prompt, mediaPart]
         });
 
         const resultText = response.text.trim();

@@ -72,6 +72,16 @@ const getReporterName = (issue, currentUserName) => {
   return issue.by;
 };
 
+const isVideoUrl = (url) => {
+  if (!url) return false;
+  return url.toLowerCase().includes('.mp4') || 
+         url.toLowerCase().includes('.mov') || 
+         url.toLowerCase().includes('.webm') || 
+         url.toLowerCase().includes('.m4v') ||
+         url.toLowerCase().includes('.quicktime') ||
+         url.toLowerCase().includes('video');
+};
+
 export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }) {
   // Navigation & Data States
   const [screen, setScreen] = useState('home'); // 'home', 'report', 'detail', 'profile'
@@ -681,7 +691,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.12)', borderRadius: '9px', padding: '6px 11px', fontSize: '12px', fontWeight: 700, color: '#5B655B', cursor: 'pointer', outline: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             <ArrowLeft size={12} weight="bold" />
-            Change Photo
+            Change Photo/Video
           </button>
         )}
       </div>
@@ -709,23 +719,23 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Camera size={26} weight="fill" style={{ color: '#1E8A4F' }} />
               </div>
-              <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo to begin</div>
+              <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo/video to begin</div>
               
               <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                {isMobileView && (
+                {navigator.mediaDevices && (
                   <button 
                     onClick={() => cameraInputRef.current.click()}
                     style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
                   >
                     <Camera size={15} weight="fill" />
-                    Take Photo
+                    Take Photo/Video
                   </button>
                 )}
                 <button 
                   onClick={() => galleryInputRef.current.click()}
                   style={{ flex: isMobileView ? 1 : undefined, width: isMobileView ? undefined : '100%', backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
                 >
-                  Upload Photo
+                  Upload Photo/Video
                 </button>
               </div>
 
@@ -733,7 +743,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 type="file" 
                 ref={cameraInputRef} 
                 onChange={handlePhotoSelect} 
-                accept="image/*"
+                accept="image/*,video/*"
                 capture="environment"
                 style={{ display: 'none' }}
               />
@@ -741,18 +751,18 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 type="file" 
                 ref={galleryInputRef} 
                 onChange={handlePhotoSelect} 
-                accept="image/*"
+                accept="image/*,video/*"
                 style={{ display: 'none' }}
               />
             </div>
           ) : (
             <div>
               <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '230px', backgroundColor: '#E4E1D6', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                <img 
-                  src={previewImageUrl} 
-                  alt="preview" 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                />
+                {selectedFile && selectedFile.type.startsWith('video') ? (
+                  <video src={previewImageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <img src={previewImageUrl} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
                 <div style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: 'rgba(22,19,14,0.6)', color: '#fff', fontSize: '10px', fontFamily: "'Space Mono', monospace", padding: '4px 9px', borderRadius: '7px' }}>
                   {selectedFile.name.substring(0, 20)}
                 </div>
@@ -762,7 +772,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 <div style={{ display: 'flex', alignItems: 'center', gap: '11px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', borderRadius: '15px', padding: '14px', marginTop: '12px' }}>
                   <div className="animate-spin-slow" style={{ width: '22px', height: '22px', border: '2.5px solid #DDEBE0', borderTopColor: '#1E8A4F', borderRadius: '50%' }} />
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#176B3D' }}>
-                    Civic Pulse AI is analyzing the photo<span className="animate-blink">...</span>
+                    Civic Pulse AI is analyzing the photo/video<span className="animate-blink">...</span>
                   </div>
                 </div>
               )}
@@ -876,7 +886,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               selectedLocation={selectedCoords}
               onLocationSelect={(coords) => {
                 setSelectedCoords(coords);
-                setDraftAddr(`Plot ${Math.floor(Math.random()*100+1)}, Lajpat Nagar, Delhi`);
+                reverseGeocode(coords.lat, coords.lng);
               }}
               zoom={15}
               interactive={true}
@@ -897,9 +907,13 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', borderRadius: '18px', overflow: 'hidden' }}>
             <div style={{ height: '140px', backgroundColor: '#E4E1D6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {previewImageUrl ? (
-                <img src={previewImageUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                selectedFile && selectedFile.type.startsWith('video') ? (
+                  <video src={previewImageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <img src={previewImageUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )
               ) : (
-                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '11px', color: '#8A8678' }}>[ ISSUE PHOTO ]</span>
+                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '11px', color: '#8A8678' }}>[ ISSUE PHOTO/VIDEO ]</span>
               )}
             </div>
             <div style={{ padding: '15px' }}>
@@ -970,7 +984,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               outline: 'none'
             }}
           >
-            {reportStep === 1 && !aiDone ? 'Add a photo to continue' : 'Continue'}
+            {reportStep === 1 && !aiDone ? 'Add a photo/video to continue' : 'Continue'}
           </button>
         )}
       </div>
@@ -995,9 +1009,13 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         {/* Photo Area */}
         <div style={{ position: 'relative', height: '210px', backgroundColor: '#EAE8DE', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
           {selectedIssue.imageUrl ? (
-            <img src={selectedIssue.imageUrl} alt={selectedIssue.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            isVideoUrl(selectedIssue.imageUrl) ? (
+              <video src={selectedIssue.imageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <img src={selectedIssue.imageUrl} alt={selectedIssue.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )
           ) : (
-            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '11px', color: '#8A8678' }}>[ ISSUE PHOTO ]</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '11px', color: '#8A8678' }}>[ ISSUE PHOTO/VIDEO ]</span>
           )}
           <button 
             onClick={() => setScreen('home')}
@@ -1738,8 +1756,8 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             )}
             <div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#1E241F' }}>Step {reportStep} of 4</h3>
-              <span style={{ fontSize: '12.5px', color: '#7C8479', fontWeight: 600 }}>
-                {['Upload Issue Photo', 'Provide Details', 'Select Map Location', 'Review and Submit'][reportStep - 1]}
+              <span style={{ fontSize: '12px', color: '#7C8479', fontWeight: 600 }}>
+                {['Upload Issue Photo/Video', 'Provide Details', 'Select Map Location', 'Review and Submit'][reportStep - 1]}
               </span>
             </div>
           </div>
@@ -1757,7 +1775,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.12)', borderRadius: '9px', padding: '6px 11px', fontSize: '12px', fontWeight: 700, color: '#5B655B', cursor: 'pointer', outline: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
             >
               <ArrowLeft size={12} weight="bold" />
-              Change Photo
+              Change Photo/Video
             </button>
           )}
         </div>
@@ -1786,14 +1804,14 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                   <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Camera size={28} weight="fill" style={{ color: '#1E8A4F' }} />
                   </div>
-                  <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo to begin</div>
+                  <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo/video to begin</div>
                   
                   <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '380px' }}>
                     <button 
                       onClick={() => galleryInputRef.current.click()}
                       style={{ width: '100%', backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '13px 10px', fontSize: '13.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
                     >
-                      Upload Photo
+                      Upload Photo/Video
                     </button>
                   </div>
 
@@ -1801,7 +1819,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                     type="file" 
                     ref={cameraInputRef} 
                     onChange={handlePhotoSelect} 
-                    accept="image/*"
+                    accept="image/*,video/*"
                     capture="environment"
                     style={{ display: 'none' }}
                   />
@@ -1809,18 +1827,18 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                     type="file" 
                     ref={galleryInputRef} 
                     onChange={handlePhotoSelect} 
-                    accept="image/*"
+                    accept="image/*,video/*"
                     style={{ display: 'none' }}
                   />
                 </div>
               ) : (
                 <div>
                   <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', height: '250px', backgroundColor: '#E4E1D6', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                    <img 
-                      src={previewImageUrl} 
-                      alt="preview" 
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#1E241F' }} 
-                    />
+                    {selectedFile && selectedFile.type.startsWith('video') ? (
+                      <video src={previewImageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#1E241F' }} />
+                    ) : (
+                      <img src={previewImageUrl} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#1E241F' }} />
+                    )}
                     <div style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: 'rgba(22,19,14,0.7)', color: '#fff', fontSize: '11px', fontFamily: "'Space Mono', monospace", padding: '4px 9px', borderRadius: '7px' }}>
                       {selectedFile.name.substring(0, 30)}
                     </div>
@@ -1967,7 +1985,11 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', borderRadius: '18px', overflow: 'hidden' }}>
                 <div style={{ height: '180px', backgroundColor: '#E4E1D6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {previewImageUrl ? (
-                    <img src={previewImageUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#1E241F' }} />
+                    selectedFile && selectedFile.type.startsWith('video') ? (
+                      <video src={previewImageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#1E241F' }} />
+                    ) : (
+                      <img src={previewImageUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#1E241F' }} />
+                    )
                   ) : (
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: '11px', color: '#8A8678' }}>[ NO PHOTO MOUNTED ]</span>
                   )}
@@ -2038,7 +2060,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                 outline: 'none'
               }}
             >
-              {reportStep === 1 && !aiDone ? 'Please upload photo to continue' : 'Continue to Next Step'}
+              {reportStep === 1 && !aiDone ? 'Please upload photo/video to continue' : 'Continue to Next Step'}
             </button>
           )}
         </div>
@@ -2066,7 +2088,11 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           {/* Back Button and Photo Container */}
           <div style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', height: '340px', backgroundColor: '#EAE8DE', border: '1px solid rgba(30,36,31,0.08)', boxShadow: '0 4px 15px rgba(0,0,0,0.04)' }}>
             {selectedIssue.imageUrl ? (
-              <img src={selectedIssue.imageUrl} alt={selectedIssue.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              isVideoUrl(selectedIssue.imageUrl) ? (
+                <video src={selectedIssue.imageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <img src={selectedIssue.imageUrl} alt={selectedIssue.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )
             ) : (
               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' }}>
                 <Camera size={40} style={{ color: '#7C8479' }} />
