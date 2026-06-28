@@ -8,20 +8,35 @@ import {
   Copy, 
   ClockCountdown,
   Buildings,
-  Sparkle
+  Sparkle,
+  MapPin,
+  Eye,
+  Wrench,
+  ArrowLeft,
+  UsersThree,
+  Info,
+  HandPointing,
+  Plus,
+  Trophy,
+  ChartBar,
+  Gear,
+  DeviceMobile,
+  Check
 } from '@phosphor-icons/react';
 
 import GoogleMapsContainer from './GoogleMapsContainer';
 
+// Color mappings based on issue category
 const C = {
-  'Pothole': { c: '#C0603C', b: '#F6E7DF', i: 'ph-traffic-cone' },
-  'Streetlight': { c: '#A9801C', b: '#F6EDD2', i: 'ph-lightbulb-filament' },
-  'Water': { c: '#357FD6', b: '#E3EDFB', i: 'ph-drop' },
-  'Waste': { c: '#1E8A4F', b: '#E3F0E6', i: 'ph-trash' },
-  'Tree / Park': { c: '#5E8A2E', b: '#ECF2DD', i: 'ph-tree' },
-  'Other': { c: '#7A6BC0', b: '#ECE7F7', i: 'ph-warning' }
+  'Pothole': { c: '#C0603C', b: '#F6E7DF', marker: '#C0603C' },
+  'Streetlight': { c: '#A9801C', b: '#F6EDD2', marker: '#A9801C' },
+  'Water': { c: '#357FD6', b: '#E3EDFB', marker: '#357FD6' },
+  'Waste': { c: '#1E8A4F', b: '#E3F0E6', marker: '#1E8A4F' },
+  'Tree / Park': { c: '#5E8A2E', b: '#ECF2DD', marker: '#5E8A2E' },
+  'Other': { c: '#7A6BC0', b: '#ECE7F7', marker: '#7A6BC0' }
 };
 
+// Color mappings based on status
 const S = {
   'Reported': { fg: '#9A6516', bg: '#FAEFD8' },
   'Verified': { fg: '#176B3D', bg: '#E3F1E7' },
@@ -29,10 +44,80 @@ const S = {
   'Resolved': { fg: '#566056', bg: '#ECEAE1' }
 };
 
-export default function Dashboard({ triggerRefresh, refreshFlag }) {
+const FIELD_CREWS = ['Team Alpha', 'Team Beta', 'Team Gamma', 'Contractor Sharma', 'Delhi PWD Crew 4'];
+
+// Custom real-time SLA Countdown Timer Component
+function SlaTimer({ dueTime, status }) {
+  const [timeStr, setTimeStr] = useState('');
+  const [isOverdue, setIsOverdue] = useState(false);
+
+  useEffect(() => {
+    if (status === 'Resolved') {
+      setTimeStr('SLA Met');
+      setIsOverdue(false);
+      return;
+    }
+
+    const calc = () => {
+      const now = new Date().getTime();
+      const due = new Date(dueTime).getTime();
+      const diff = due - now;
+
+      if (diff <= 0) {
+        const overdueMs = Math.abs(diff);
+        const hours = Math.floor(overdueMs / (1000 * 60 * 60));
+        const mins = Math.floor((overdueMs % (1000 * 60 * 60)) / (1000 * 60));
+        setTimeStr(`Overdue ${hours}h ${mins}m`);
+        setIsOverdue(true);
+      } else {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        setTimeStr(`${hours}h ${mins}m left`);
+        setIsOverdue(false);
+      }
+    };
+
+    calc();
+    const interval = setInterval(calc, 10000);
+    return () => clearInterval(interval);
+  }, [dueTime, status]);
+
+  if (status === 'Resolved') {
+    return (
+      <span style={{ color: '#1E8A4F', fontWeight: 700, fontSize: '11.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+        <CheckCircle size={13} weight="fill" /> Met
+      </span>
+    );
+  }
+
+  return (
+    <span 
+      style={{ 
+        color: isOverdue ? '#C0603C' : '#A9801C', 
+        backgroundColor: isOverdue ? '#F6E7DF' : '#F6EDD2',
+        padding: '3px 8px',
+        borderRadius: '6px',
+        fontSize: '11px',
+        fontWeight: 800,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px'
+      }}
+    >
+      <ClockCountdown size={12} weight="bold" />
+      {timeStr}
+    </span>
+  );
+}
+
+export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole }) {
   const [issues, setIssues] = useState([]);
-  const [dashFilter, setDashFilter] = useState('All');
+  const [selectedId, setSelectedId] = useState(null);
+  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [sidebarTab, setSidebarTab] = useState('operations'); // 'operations', 'analytics'
+  const [opView, setOpView] = useState('kanban'); // 'triage', 'kanban'
   const [toast, setToast] = useState('');
+  const [loadingIssues, setLoadingIssues] = useState(false);
 
   useEffect(() => {
     fetchIssues();
@@ -44,18 +129,27 @@ export default function Dashboard({ triggerRefresh, refreshFlag }) {
   };
 
   const fetchIssues = async () => {
+    setLoadingIssues(true);
     try {
       const res = await fetch('/api/issues');
       const data = await res.json();
       setIssues(data);
+      
+      // Keep selected issue in sync
+      if (selectedId) {
+        const updated = data.find(i => i.customId === selectedId);
+        if (updated) setSelectedIssue(updated);
+      }
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoadingIssues(false);
     }
   };
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      const res = await fetch(`/api/issues/${id}/status`, {
+      const res = await fetch(`/api/issues/${encodeURIComponent(id)}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -71,277 +165,932 @@ export default function Dashboard({ triggerRefresh, refreshFlag }) {
     }
   };
 
-  // Metrics calculations
-  const totalOpen = issues.filter(i => i.status !== 'Resolved').length;
-  const totalResolved = issues.filter(i => i.status === 'Resolved').length;
-  
-  const statCards = [
-    { 
-      label: 'Open issues', 
-      value: totalOpen, 
-      sub: '+8 this week', 
-      icon: <WarningCircle size={20} weight="fill" />, 
-      color: '#C0603C', 
-      bg: '#F6E7DF' 
-    },
-    { 
-      label: 'Verified rate', 
-      value: '89%', 
-      sub: 'by community', 
-      icon: <ShieldCheck size={20} weight="fill" />, 
-      color: '#1E8A4F', 
-      bg: '#E3F1E7' 
-    },
-    { 
-      label: 'Avg resolution', 
-      value: '3.2d', 
-      sub: '-0.4d vs last mo', 
-      icon: <Timer size={20} weight="fill" />, 
-      color: '#357FD6', 
-      bg: '#E3EDFB' 
-    },
-    { 
-      label: 'Resolved', 
-      value: totalResolved, 
-      sub: '+12 vs last mo', 
-      icon: <CheckCircle size={20} weight="fill" />, 
-      color: '#A9801C', 
-      bg: '#F6EDD2' 
+  const handleAssignAgent = async (id, agent) => {
+    if (!agent) return;
+    try {
+      const res = await fetch(`/api/issues/${encodeURIComponent(id)}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agent })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Assigned to ${agent}`);
+        fetchIssues();
+        if (triggerRefresh) triggerRefresh();
+      }
+    } catch (err) {
+      console.error(err);
     }
-  ];
-
-  // Category breakdown calculation
-  const getCategoryCount = (cat) => {
-    return issues.filter(i => i.cat === cat).length;
   };
 
-  const maxCount = Math.max(...Object.keys(C).map(getCategoryCount), 1);
+  const handleSimulateResolve = async (id, cat) => {
+    // Mock resolution images based on issue category
+    const mockResolutions = {
+      'Pothole': 'https://images.unsplash.com/photo-1515162305285-0293e4767cc2?auto=format&fit=crop&q=80&w=600',
+      'Streetlight': 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&q=80&w=600',
+      'Water': 'https://images.unsplash.com/photo-1548810931-e6b4a6453291?auto=format&fit=crop&q=80&w=600',
+      'Waste': 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&q=80&w=600',
+      'Tree / Park': 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&q=80&w=600',
+      'Other': 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&q=80&w=600'
+    };
+    const resolutionUrl = mockResolutions[cat] || mockResolutions['Other'];
 
-  // Filter issues for display in table
-  const filteredIssues = issues.filter(i => dashFilter === 'All' || i.status === dashFilter);
+    try {
+      const res = await fetch(`/api/issues/${encodeURIComponent(id)}/resolve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolutionImageUrl: resolutionUrl })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Worker uploaded resolution photo!');
+        fetchIssues();
+        if (triggerRefresh) triggerRefresh();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-  return (
-    <div className="w-full max-w-[1180px] text-left animate-fade-up">
-      
-      {/* Top Title Bar */}
-      <div className="flex items-end justify-between gap-4 flex-wrap mb-[18px]">
-        <div>
-          <div className="flex items-center gap-[9px] text-[12px] text-[#7C8479] font-bold">
-            <Buildings size={16} weight="fill" className="text-[#1E8A4F]" />
-            MUNICIPAL CORPORATION OF DELHI
-          </div>
-          <h2 className="text-[26px] font-extrabold tracking-tight text-[#1E241F] mt-[3px]">
-            Issue operations dashboard
-          </h2>
-        </div>
-        <div className="flex items-center gap-[9px] bg-gradient-to-b from-[#E9F4EC] to-[#E3F1E7] border border-[rgba(30,138,79,0.2)] px-[14px] py-[9px] rounded-[13px]">
-          <Sparkle size={16} weight="fill" className="text-[#1E8A4F]" />
-          <div className="text-[12.5px] font-bold text-[#176B3D]">AI updated insights · Live feed</div>
-        </div>
-      </div>
+  const handleApproveResolution = async (id) => {
+    try {
+      const res = await fetch(`/api/issues/${encodeURIComponent(id)}/approve`, {
+        method: 'PATCH'
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Ticket approved and closed successfully!');
+        fetchIssues();
+        if (triggerRefresh) triggerRefresh();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-      {/* KPI Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-[14px] mb-[16px]">
-        {statCards.map((s, idx) => (
-          <div key={idx} className="bg-white border border-[rgba(30,36,31,0.07)] rounded-[18px] p-[16px] shadow-[0_2px_10px_rgba(28,33,24,0.04)] flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <div className="text-[12px] text-[#7C8479] font-bold uppercase tracking-wider">{s.label}</div>
-              <div className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center" style={{ color: s.color, backgroundColor: s.bg }}>
-                {s.icon}
-              </div>
-            </div>
-            <div className="text-[30px] font-extrabold text-[#1E241F] tracking-tight mt-[9px]">{s.value}</div>
-            <div className="text-[11.5px] text-[#7C8479] font-bold mt-[2px]">{s.sub}</div>
-          </div>
-        ))}
-      </div>
+  const handleRejectResolution = async (id) => {
+    try {
+      // Revert resolutionImageUrl back to null, reset to In Progress status
+      const res = await fetch(`/api/issues/${encodeURIComponent(id)}/resolve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resolutionImageUrl: null })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Resolution rejected. Ticket returned to crew.');
+        fetchIssues();
+        if (triggerRefresh) triggerRefresh();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-      {/* Map and Predictive Insights Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_1fr] gap-[16px] mb-[16px]">
+  const handleMarkerClick = (customId) => {
+    const issue = issues.find(i => i.customId === customId);
+    if (issue) {
+      setSelectedId(customId);
+      setSelectedIssue(issue);
+    }
+  };
+
+  // Helper styles
+  const pillStyle = (status) => {
+    const x = S[status] || S['Reported'];
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '4px 10px',
+      borderRadius: '999px',
+      fontSize: '11px',
+      fontWeight: 700,
+      color: x.fg,
+      backgroundColor: x.bg
+    };
+  };
+
+  const isTicketOverdue = (dueTime, status) => {
+    if (status === 'Resolved') return false;
+    return new Date().getTime() > new Date(dueTime).getTime();
+  };
+
+  // Layout Renderers
+  const renderOperations = () => {
+    const activeIssueList = issues.filter(i => i.guardrailStatus !== 'Flagged');
+    const flaggedIssueList = issues.filter(i => i.guardrailStatus === 'Flagged');
+
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: selectedIssue ? '1.2fr 0.8fr' : '1fr', gap: '24px', height: 'calc(100vh - 100px)', overflow: 'hidden' }}>
         
-        {/* Live Issue Map Card */}
-        <div className="bg-white border border-[rgba(30,36,31,0.07)] rounded-[18px] p-[16px] shadow-[0_2px_10px_rgba(28,33,24,0.04)]">
-          <div className="flex items-center justify-between mb-[13px]">
-            <div className="text-[15px] font-extrabold text-[#1E241F]">Live issue map</div>
-            <div className="text-[11.5px] text-[#7C8479] font-bold font-mono">{totalOpen} unresolved open</div>
-          </div>
-          <div className="relative rounded-[14px] overflow-hidden h-[300px] border border-[rgba(30,36,31,0.06)]">
-            <GoogleMapsContainer 
-              issues={issues}
-              interactive={false}
-              zoom={13}
-            />
-          </div>
-        </div>
-
-        {/* AI Insights Card */}
-        <div className="bg-gradient-to-b from-[#EAF4EC] to-white border border-[rgba(30,138,79,0.18)] rounded-[18px] p-[16px] flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-[8px] text-[15px] font-extrabold text-[#176B3D]">
-              <Sparkle size={18} weight="fill" />
-              AI predictive insights
+        {/* Operations Content Left Area */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', paddingRight: '4px' }} className="cpscroll">
+          
+          {/* Live Heatmap Area */}
+          <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '20px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14.5px', fontWeight: 800 }}>
+                <MapPin size={18} weight="fill" style={{ color: '#1E8A4F' }} />
+                <span>Geospatial Operations Heatmap</span>
+              </div>
+              <span style={{ fontSize: '11px', color: '#7C8479', fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
+                {issues.filter(i => i.status !== 'Resolved').length} Unresolved Issues Online
+              </span>
             </div>
-            <div className="flex flex-col gap-[10px] mt-[13px]">
-              
-              <div className="bg-white border border-[rgba(30,36,31,0.07)] rounded-[13px] p-[12px] flex gap-[10px] items-start">
-                <div className="w-[28px] h-[28px] rounded-[8px] bg-[#F6E7DF] text-[#C0603C] flex items-center justify-center flex-shrink-0">
-                  <TrendUp size={15} weight="fill" />
-                </div>
-                <div className="leading-snug">
-                  <div className="text-[12.5px] font-bold text-[#1E241F]">Pothole reports up 32% in Lajpat Nagar</div>
-                  <div className="text-[11.5px] text-[#7C8479] mt-[2px]">Recommend proactive checks on Ring Road corridor prior to next week's monsoon forecast.</div>
-                </div>
-              </div>
-
-              <div className="bg-white border border-[rgba(30,36,31,0.07)] rounded-[13px] p-[12px] flex gap-[10px] items-start">
-                <div className="w-[28px] h-[28px] rounded-[8px] bg-[#E3EDFB] text-[#357FD6] flex items-center justify-center flex-shrink-0">
-                  <Copy size={15} weight="fill" />
-                </div>
-                <div className="leading-snug">
-                  <div className="text-[12.5px] font-bold text-[#1E241F]">Auto-Merge Opportunity Detected</div>
-                  <div className="text-[11.5px] text-[#7C8479] mt-[2px]">Clustered 2 reports as duplicate of Maple St. pothole. Verify to auto-resolve copies.</div>
-                </div>
-              </div>
-
-              <div className="bg-white border border-[rgba(30,36,31,0.07)] rounded-[13px] p-[12px] flex gap-[10px] items-start">
-                <div className="w-[28px] h-[28px] rounded-[8px] bg-[#F6EDD2] text-[#A9801C] flex items-center justify-center flex-shrink-0">
-                  <ClockCountdown size={15} weight="fill" />
-                </div>
-                <div className="leading-snug">
-                  <div className="text-[12.5px] font-bold text-[#1E241F]">SLA SLA Breach warning</div>
-                  <div className="text-[11.5px] text-[#7C8479] mt-[2px]">Streetlight #1038 in progress for 5h. Expected resolution SLA limit is 12h.</div>
-                </div>
-              </div>
-
+            <div style={{ height: '240px', borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(30,36,31,0.08)' }}>
+              <GoogleMapsContainer 
+                issues={issues}
+                zoom={13}
+                onMarkerClick={handleMarkerClick}
+              />
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Grid of Issues List Table and Issue breakdown chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_1fr] gap-[16px]">
-        
-        {/* Operations Table */}
-        <div className="bg-white border border-[rgba(30,36,31,0.07)] rounded-[18px] p-[16px] shadow-[0_2px_10px_rgba(28,33,24,0.04)] flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-[13px] flex-wrap gap-[10px]">
-              <div className="text-[15px] font-extrabold text-[#1E241F]">Reported issues</div>
-              <div className="flex gap-[4px] bg-[#F1EFE6] p-[3px] rounded-[10px]">
-                {['All', 'Reported', 'Verified', 'In Progress', 'Resolved'].map((filterVal) => (
-                  <button 
-                    key={filterVal}
-                    onClick={() => setDashFilter(filterVal)}
-                    className={`px-[12px] py-[6px] rounded-[8px] border-none text-[12px] font-bold cursor-pointer transition-all ${
-                      dashFilter === filterVal 
-                        ? 'bg-white text-[#1E8A4F] shadow-[0_1px_4px_rgba(28,33,24,0.1)]' 
-                        : 'bg-transparent text-[#7C8479]'
-                    }`}
-                  >
-                    {filterVal}
-                  </button>
-                ))}
+          {/* View Toggles & Triage Actions */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+            <div style={{ display: 'flex', gap: '6px', backgroundColor: '#E2E0D6', padding: '4px', borderRadius: '12px' }}>
+              <button 
+                onClick={() => setOpView('kanban')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '9px',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  backgroundColor: opView === 'kanban' ? '#fff' : 'transparent',
+                  color: opView === 'kanban' ? '#1E8A4F' : '#7C8479',
+                  boxShadow: opView === 'kanban' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                  transition: 'all 0.15s'
+                }}
+              >
+                Kanban Board
+              </button>
+              <button 
+                onClick={() => setOpView('triage')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '9px',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  backgroundColor: opView === 'triage' ? '#fff' : 'transparent',
+                  color: opView === 'triage' ? '#1E8A4F' : '#7C8479',
+                  boxShadow: opView === 'triage' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
+                  transition: 'all 0.15s'
+                }}
+              >
+                Triage List ({activeIssueList.length})
+              </button>
+            </div>
+            
+            {flaggedIssueList.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#F6E7DF', color: '#C0603C', padding: '6px 12px', borderRadius: '10px', fontSize: '11.5px', fontWeight: 700 }}>
+                <WarningCircle size={14} weight="fill" />
+                <span>{flaggedIssueList.length} items flagged by AI guardrail</span>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Table Header */}
-            <div className="grid grid-cols-[1.7fr_0.9fr_0.7fr_0.9fr] gap-[8px] px-1 pb-[9px] text-[10.5px] font-bold text-[#A7AC9F] uppercase tracking-wider border-b border-[rgba(30,36,31,0.06)]">
-              <div>Issue</div>
-              <div>Location</div>
-              <div>Confirms</div>
-              <div>Status</div>
-            </div>
-
-            {/* Table Body */}
-            <div className="flex flex-col">
-              {filteredIssues.map((issue) => {
-                const c = C[issue.cat] || C['Other'];
-                const sc = S[issue.status] || S['Reported'];
+          {/* VIEW: KANBAN BOARD */}
+          {opView === 'kanban' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', flex: 1, minHeight: '350px' }}>
+              {['Reported', 'Verified', 'In Progress', 'Resolved'].map((col) => {
+                const colIssues = activeIssueList.filter(i => i.status === col);
                 return (
-                  <div key={issue.customId} className="grid grid-cols-[1.7fr_0.9fr_0.7fr_0.9fr] gap-[8px] items-center py-[11px] px-1 border-b border-[rgba(30,36,31,0.05)] last:border-none">
-                    <div className="flex items-center gap-[9px] min-w-0">
-                      <div 
-                        className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center flex-shrink-0"
-                        style={{ color: c.c, backgroundColor: c.b }}
-                      >
-                        <i className={`ph-fill ${c.i} text-lg`}></i>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-[13px] font-bold text-[#1E241F] truncate">{issue.title}</div>
-                        <div className="text-[10.5px] text-[#A7AC9F] font-mono">{issue.customId}</div>
-                      </div>
+                  <div key={col} style={{ backgroundColor: 'rgba(255,255,255,0.45)', borderRadius: '16px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid rgba(30,36,31,0.04)' }}>
+                    
+                    {/* Column Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(30,36,31,0.06)', paddingBottom: '8px' }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1E241F' }}>{col}</span>
+                      <span style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', borderRadius: '999px', padding: '2px 8px', fontSize: '10px', fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>
+                        {colIssues.length}
+                      </span>
                     </div>
-                    <div className="text-[12px] text-[#5B655B] font-bold truncate">{issue.loc}</div>
-                    <div className="text-[12.5px] font-bold text-[#41624C] font-mono">{issue.confirms}</div>
-                    <div>
-                      <select 
-                        value={issue.status}
-                        onChange={(e) => handleStatusChange(issue.customId, e.target.value)}
-                        className="border-none rounded-[8px] px-2 py-[6px] text-[11.5px] font-bold cursor-pointer outline-none focus:ring-1 focus:ring-[#1E8A4F] w-full"
-                        style={{ color: sc.fg, backgroundColor: sc.bg }}
-                      >
-                        <option value="Reported">Reported</option>
-                        <option value="Verified">Verified</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Resolved">Resolved</option>
-                      </select>
+
+                    {/* Column Body Cards */}
+                    <div className="cpscroll" style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1 }}>
+                      {colIssues.map((issue) => {
+                        const hasBreached = isTicketOverdue(issue.dueTime, issue.status);
+                        const isSelected = selectedId === issue.customId;
+                        return (
+                          <div 
+                            key={issue.customId}
+                            onClick={() => {
+                              setSelectedId(issue.customId);
+                              setSelectedIssue(issue);
+                            }}
+                            style={{
+                              backgroundColor: '#fff',
+                              border: isSelected 
+                                ? '2px solid #1E8A4F' 
+                                : hasBreached 
+                                  ? '1.5px solid #C0603C' 
+                                  : '1px solid rgba(30,36,31,0.06)',
+                              borderRadius: '12px',
+                              padding: '11px',
+                              boxShadow: hasBreached 
+                                ? '0 4px 10px rgba(192,96,60,0.07)' 
+                                : '0 2px 6px rgba(0,0,0,0.015)',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'transform 0.15s, border-color 0.15s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '4px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#7C8479', fontFamily: "'Space Mono', monospace" }}>{issue.customId}</span>
+                              <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', backgroundColor: C[issue.cat]?.b || '#fff', color: C[issue.cat]?.c || '#5B655B' }}>
+                                {issue.cat}
+                              </span>
+                            </div>
+                            
+                            <div style={{ fontSize: '12px', fontWeight: 800, color: '#1E241F', marginTop: '6px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                              {issue.title}
+                            </div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', color: '#7C8479', marginTop: '6px' }}>
+                              <MapPin size={12} />
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{issue.loc}</span>
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(30,36,31,0.05)', marginTop: '8px', paddingTop: '6px' }}>
+                              <span style={{ fontSize: '10px', color: '#7C8479', fontWeight: 600 }}>{issue.confirms} upvotes</span>
+                              {hasBreached ? (
+                                <span style={{ fontSize: '9px', fontWeight: 800, color: '#C0603C', textTransform: 'uppercase', animation: 'cpBlink 1.4s infinite' }}>Escalated</span>
+                              ) : (
+                                <span style={{ fontSize: '10px', fontWeight: 700, color: '#A9801C' }}>Active SLA</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {colIssues.length === 0 && (
+                        <div style={{ padding: '20px 10px', textAlign: 'center', fontSize: '11px', color: '#A7AC9F', fontStyle: 'italic' }}>
+                          No tickets
+                        </div>
+                      )}
                     </div>
+
                   </div>
                 );
               })}
-              {filteredIssues.length === 0 && (
-                <div className="text-center py-[40px] text-sm text-[#7C8479]">No issues match the selected filter.</div>
+            </div>
+          )}
+
+          {/* VIEW: TRIAGE QUEUE LIST */}
+          {opView === 'triage' && (
+            <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+              
+              {/* Table Header */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr 0.9fr 0.7fr 0.9fr', gap: '10px', padding: '0 8px 10px', borderBottom: '1px solid rgba(30,36,31,0.06)', fontSize: '10.5px', fontWeight: 700, color: '#A7AC9F', uppercase: true, tracking: '0.04em' }}>
+                <div>TICKET DETAILS</div>
+                <div>WARD / LOCATION</div>
+                <div>DEPARTMENT</div>
+                <div>SLA STATUS</div>
+                <div style={{ textAlign: 'center' }}>UPVOTES</div>
+                <div>STATE</div>
+              </div>
+
+              {/* Table Body */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {activeIssueList.map((issue) => {
+                  const isSelected = selectedId === issue.customId;
+                  const colorConfig = C[issue.cat] || C['Other'];
+                  return (
+                    <div 
+                      key={issue.customId}
+                      onClick={() => {
+                        setSelectedId(issue.customId);
+                        setSelectedIssue(issue);
+                      }}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1.2fr 0.9fr 0.9fr 0.9fr 0.7fr 0.9fr',
+                        gap: '10px',
+                        alignItems: 'center',
+                        padding: '12px 8px',
+                        borderBottom: '1px solid rgba(30,36,31,0.05)',
+                        cursor: 'pointer',
+                        backgroundColor: isSelected ? 'rgba(30,138,79,0.06)' : 'transparent',
+                        borderRadius: '8px',
+                        transition: 'background-color 0.15s'
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', minWidth: 0 }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#E4E1D6', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {issue.imageUrl ? (
+                            <img src={issue.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: '8px', fontWeight: 700, color: '#8A8678' }}>No Img</span>
+                          )}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1E241F', truncate: true, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{issue.title}</div>
+                          <div style={{ fontSize: '11px', color: '#7C8479', marginTop: '2px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700 }}>{issue.customId}</span>
+                            <span>·</span>
+                            <span style={{ color: colorConfig.c, fontWeight: 700 }}>{issue.cat}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '12px', color: '#5B655B', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {issue.loc}
+                      </div>
+
+                      <div style={{ fontSize: '11.5px', color: '#5B655B', fontWeight: 600 }}>
+                        {issue.department || 'General Admin'}
+                      </div>
+
+                      <div>
+                        <SlaTimer dueTime={issue.dueTime} status={issue.status} />
+                      </div>
+
+                      <div style={{ textAlign: 'center', fontSize: '12px', fontWeight: 700, fontFamily: "'Space Mono', monospace", color: '#41624C' }}>
+                        {issue.confirms}
+                      </div>
+
+                      <div>
+                        <span style={pillStyle(issue.status)}>{issue.status}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+            </div>
+          )}
+
+        </div>
+
+        {/* Operations Ticket Details Panel Right Area */}
+        {selectedIssue && (
+          <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', textAlign: 'left' }} className="cpscroll animate-fade-up">
+            
+            {/* Panel Header */}
+            <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(30,36,31,0.06)', paddingBottom: '14px', marginBottom: '14px', width: '100%', justifyContent: 'space-between' }}>
+              <div>
+                <span style={{ fontFamily: "'Space Mono', monospace", fontWeight: 700, fontSize: '11.5px', color: '#7C8479' }}>TICKET DETAILS · {selectedIssue.customId}</span>
+                <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#1E241F', marginTop: '2px' }}>{selectedIssue.title}</h3>
+              </div>
+              <button 
+                onClick={() => {
+                  setSelectedId(null);
+                  setSelectedIssue(null);
+                }}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '4px', color: '#A7AC9F' }}
+              >
+                <ArrowLeft size={18} weight="bold" style={{ transform: 'rotate(90deg)' }} />
+              </button>
+            </div>
+
+            {/* SLA countdown banner */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: isTicketOverdue(selectedIssue.dueTime, selectedIssue.status) ? '#F6E7DF' : '#EAF4EC',
+              border: `1.5px solid ${isTicketOverdue(selectedIssue.dueTime, selectedIssue.status) ? '#C0603C' : '#1E8A4F'}`,
+              borderRadius: '14px',
+              padding: '10px 14px',
+              marginBottom: '16px'
+            }}>
+              <div>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, color: isTicketOverdue(selectedIssue.dueTime, selectedIssue.status) ? '#9A4526' : '#176B3D', textTransform: 'uppercase' }}>
+                  {isTicketOverdue(selectedIssue.dueTime, selectedIssue.status) ? '⏰ Escalated State (SLA Breached)' : '✅ SLA Service Window'}
+                </div>
+                <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1E241F', marginTop: '2px' }}>
+                  <SlaTimer dueTime={selectedIssue.dueTime} status={selectedIssue.status} />
+                </div>
+              </div>
+              <span style={{ fontSize: '11px', color: '#5B655B', fontWeight: 700 }}>Deadline: {selectedIssue.slaHours} hrs</span>
+            </div>
+
+            {/* AI Screening Shield Guardrails */}
+            <div style={{
+              display: 'flex',
+              gap: '10px',
+              alignItems: 'center',
+              backgroundColor: selectedIssue.guardrailStatus === 'Flagged' ? '#F6E7DF' : '#E3EDFB',
+              border: `1px solid ${selectedIssue.guardrailStatus === 'Flagged' ? '#E8B9A6' : 'rgba(53,127,214,0.18)'}`,
+              borderRadius: '12px',
+              padding: '10px 12px',
+              marginBottom: '16px'
+            }}>
+              <ShieldCheck size={20} weight="fill" style={{ color: selectedIssue.guardrailStatus === 'Flagged' ? '#C0603C' : '#357FD6', flexShrink: 0 }} />
+              <div style={{ fontSize: '11.5px', lineHeight: 1.25 }}>
+                <span style={{ fontWeight: 800, color: selectedIssue.guardrailStatus === 'Flagged' ? '#9A4526' : '#2C5D9E' }}>AI Security Guardrail: </span>
+                <span style={{ fontWeight: 600, color: '#41624C' }}>
+                  {selectedIssue.guardrailStatus === 'Flagged' 
+                    ? 'Warning: Flagged by auto-moderator for blurriness/irrelevance.' 
+                    : 'Passed check. Image content verified as safe.'}
+                </span>
+              </div>
+            </div>
+
+            {/* Images display: Before and After side-by-side */}
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#41624C', marginBottom: '6px' }}>Verification Media</div>
+              
+              {selectedIssue.resolutionImageUrl ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {/* Original photo */}
+                  <div style={{ borderRadius: '12px', overflow: 'hidden', height: '130px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative' }}>
+                    <img src={selectedIssue.imageUrl} alt="Before" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: '6px', left: '6px', backgroundColor: 'rgba(22,19,14,0.6)', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
+                      BEFORE (Citizen)
+                    </div>
+                  </div>
+                  {/* Resolution photo */}
+                  <div style={{ borderRadius: '12px', overflow: 'hidden', height: '130px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative' }}>
+                    <img src={selectedIssue.resolutionImageUrl} alt="After" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: '6px', left: '6px', backgroundColor: '#1E8A4F', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
+                      AFTER (Worker)
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ borderRadius: '14px', overflow: 'hidden', height: '160px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative', backgroundColor: '#E4E1D6' }}>
+                  {selectedIssue.imageUrl ? (
+                    <img src={selectedIssue.imageUrl} alt="Original report" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#7C8479', fontWeight: 700 }}>No Image Available</div>
+                  )}
+                  <div style={{ position: 'absolute', bottom: '8px', left: '8px', backgroundColor: 'rgba(22,19,14,0.6)', color: '#fff', fontSize: '9.5px', fontWeight: 700, padding: '3px 8px', borderRadius: '5px' }}>
+                    Citizen Uploaded Photo
+                  </div>
+                </div>
               )}
             </div>
+
+            {/* AI Auto-Categorization & Routing */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ backgroundColor: '#F6F4ED', border: '1px solid rgba(30,36,31,0.06)', padding: '10px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#7C8479', uppercase: true }}>AI AUTO-CATEGORY</div>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: '#1E241F', marginTop: '2px' }}>{selectedIssue.cat}</div>
+              </div>
+              <div style={{ backgroundColor: '#F6F4ED', border: '1px solid rgba(30,36,31,0.06)', padding: '10px', borderRadius: '12px' }}>
+                <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#7C8479', uppercase: true }}>ROUTED DEPARTMENT</div>
+                <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1E241F', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {selectedIssue.department || 'PWD Sanitation Dept'}
+                </div>
+              </div>
+            </div>
+
+            {/* Ticket Info Details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px', color: '#5B655B', backgroundColor: '#F6F4ED', padding: '12px', borderRadius: '14px', border: '1px solid rgba(30,36,31,0.05)', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyBetween: 'space-between', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 600 }}>Reported By:</span>
+                <span style={{ fontWeight: 700, color: '#1E241F' }}>{selectedIssue.by}</span>
+              </div>
+              <div style={{ display: 'flex', justifyBetween: 'space-between', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 600 }}>Location Address:</span>
+                <span style={{ fontWeight: 700, color: '#1E241F', textAlign: 'right', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedIssue.loc}</span>
+              </div>
+              <div style={{ display: 'flex', justifyBetween: 'space-between', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 600 }}>Confirmations:</span>
+                <span style={{ fontWeight: 700, color: '#1E8A4F', fontFamily: "'Space Mono', monospace" }}>{selectedIssue.confirms} neighbors upvoted</span>
+              </div>
+              {selectedIssue.assignedAgent && (
+                <div style={{ display: 'flex', justifyBetween: 'space-between', justifyContent: 'space-between' }}>
+                  <span style={{ fontWeight: 600 }}>Assigned Agent:</span>
+                  <span style={{ fontWeight: 700, color: '#1E241F' }}>{selectedIssue.assignedAgent}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Dispatch / Resolution actions */}
+            <div style={{ marginTop: 'auto', paddingTop: '10px' }}>
+              
+              {/* Action 1: Dispatch crew (if not assigned) */}
+              {selectedIssue.status !== 'Resolved' && !selectedIssue.assignedAgent && (
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#41624C', display: 'block', marginBottom: '6px' }}>Dispatch Field Crew / Vendor</label>
+                  <select 
+                    onChange={(e) => handleAssignAgent(selectedIssue.customId, e.target.value)}
+                    defaultValue=""
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1.5px solid #1E8A4F', fontSize: '13px', fontWeight: 700, outline: 'none', cursor: 'pointer', backgroundColor: '#fff', color: '#176B3D' }}
+                  >
+                    <option value="" disabled>-- Select Crew to Dispatch --</option>
+                    {FIELD_CREWS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Action 2: Simulate resolution upload (if In Progress but resolution image not uploaded) */}
+              {selectedIssue.status === 'In Progress' && selectedIssue.assignedAgent && !selectedIssue.resolutionImageUrl && (
+                <button 
+                  onClick={() => handleSimulateResolve(selectedIssue.customId, selectedIssue.cat)}
+                  style={{ width: '100%', backgroundColor: '#357FD6', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(53,127,214,0.3)', outline: 'none' }}
+                >
+                  <Wrench size={16} weight="fill" />
+                  Simulate Worker Resolution Upload
+                </button>
+              )}
+
+              {/* Action 3: Before & After verification review (if resolution image exists for approval) */}
+              {selectedIssue.resolutionImageUrl && selectedIssue.status !== 'Resolved' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#176B3D', backgroundColor: '#E3F1E7', border: '1px solid rgba(30,138,79,0.18)', borderRadius: '10px', padding: '8px 12px', textAlign: 'center', lineHeight: 1.35 }}>
+                    👷‍♂️ Worker submitted resolution. Please inspect the photos and approve.
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      onClick={() => handleApproveResolution(selectedIssue.customId)}
+                      style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                    >
+                      <Check size={14} weight="bold" />
+                      Approve & Close
+                    </button>
+                    <button 
+                      onClick={() => handleRejectResolution(selectedIssue.customId)}
+                      style={{ flex: 1, backgroundColor: '#fff', border: '1.5px solid #C0603C', color: '#C0603C', borderRadius: '12px', padding: '12px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                    >
+                      <WarningCircle size={14} weight="bold" />
+                      Reject & Redo
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Ticket fully resolved metadata */}
+              {selectedIssue.status === 'Resolved' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#E3F1E7', border: '1px solid rgba(30,138,79,0.18)', color: '#176B3D', borderRadius: '12px', padding: '12px 14px', fontSize: '13px', fontWeight: 800, justifyContent: 'center' }}>
+                  <CheckCircle size={18} weight="fill" />
+                  Ticket resolved, closed, and citizen rewarded.
+                </div>
+              )}
+
+            </div>
+
+          </div>
+        )}
+
+      </div>
+    );
+  };
+
+  const renderAnalytics = () => {
+    // Calculated insights mock calculations based on loaded issues
+    const totalReports = issues.length;
+    const pendingReports = issues.filter(i => i.status !== 'Resolved').length;
+    const resolvedReports = issues.filter(i => i.status === 'Resolved').length;
+    const activeBreaches = issues.filter(i => i.status !== 'Resolved' && isTicketOverdue(i.dueTime, i.status)).length;
+
+    // Categories statistics
+    const catStats = { Pothole: 0, Streetlight: 0, Water: 0, Waste: 0, 'Tree / Park': 0, Other: 0 };
+    issues.forEach(i => {
+      if (catStats[i.cat] !== undefined) catStats[i.cat]++;
+      else catStats.Other++;
+    });
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '22px', textAlign: 'left', animation: 'cpFadeIn .3s ease' }}>
+        
+        {/* KPI metrics cards row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '14px' }}>
+          <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+            <span style={{ fontSize: '11px', color: '#7C8479', fontWeight: 800, textTransform: 'uppercase' }}>Total Tickets</span>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: '#1E241F', marginTop: '6px' }}>{totalReports}</div>
+            <div style={{ fontSize: '10.5px', color: '#176B3D', fontWeight: 700, marginTop: '2px' }}>+8 Filed this week</div>
+          </div>
+          <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+            <span style={{ fontSize: '11px', color: '#7C8479', fontWeight: 800, textTransform: 'uppercase' }}>Unresolved Tickets</span>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: '#1E241F', marginTop: '6px' }}>{pendingReports}</div>
+            <div style={{ fontSize: '10.5px', color: '#7C8479', fontWeight: 700, marginTop: '2px' }}>Currently in pipeline</div>
+          </div>
+          <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+            <span style={{ fontSize: '11px', color: '#7C8479', fontWeight: 800, textTransform: 'uppercase' }}>Resolved Tickets</span>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: '#1E8A4F', marginTop: '6px' }}>{resolvedReports}</div>
+            <div style={{ fontSize: '10.5px', color: '#1E8A4F', fontWeight: 700, marginTop: '2px' }}>89.2% Resolution rate</div>
+          </div>
+          <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '18px', padding: '16px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+            <span style={{ fontSize: '11px', color: '#7C8479', fontWeight: 800, textTransform: 'uppercase' }}>SLA Breaches</span>
+            <div style={{ fontSize: '28px', fontWeight: 800, color: activeBreaches > 0 ? '#C0603C' : '#1E241F', marginTop: '6px' }}>{activeBreaches}</div>
+            <div style={{ fontSize: '10.5px', color: activeBreaches > 0 ? '#C0603C' : '#7C8479', fontWeight: 700, marginTop: '2px' }}>
+              {activeBreaches > 0 ? 'Requires escalated review' : 'All timers within limits'}
+            </div>
           </div>
         </div>
 
-        {/* Category breakdown bar charts */}
-        <div className="bg-white border border-[rgba(30,36,31,0.07)] rounded-[18px] p-[16px] shadow-[0_2px_10px_rgba(28,33,24,0.04)] flex flex-col justify-between">
+        {/* Charts & embeds layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
+          
+          {/* Mock Looker Studio Embed Container */}
+          <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '22px', padding: '20px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1.5px solid rgba(30,36,31,0.06)', paddingBottom: '10px' }}>
+              <div>
+                <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#7C8479', uppercase: true }}>LOOKER STUDIO EMULATOR</span>
+                <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#1E241F', marginTop: '1px' }}>Macro Ward Operations Analytics</h4>
+              </div>
+              <span style={{ fontSize: '11px', color: '#1E8A4F', backgroundColor: '#E3F1E7', padding: '4px 10px', borderRadius: '999px', fontWeight: 700 }}>Embed Active</span>
+            </div>
+
+            {/* Styled embedded visual charts */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', padding: '10px 0' }}>
+              
+              {/* Avg Resolution Time chart */}
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#41624C', marginBottom: '10px' }}>Average Resolution Time by Ward (Days)</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[
+                    { label: 'Ward 42 (Lajpat Nagar)', days: 1.8, val: '55%' },
+                    { label: 'Ward 39 (Defence Colony)', days: 2.1, val: '65%' },
+                    { label: 'Ward 45 (Amar Colony)', days: 1.4, val: '43%' },
+                    { label: 'Ward 32 (Nehru Park)', days: 2.9, val: '88%' }
+                  ].map((w, idx) => (
+                    <div key={idx}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: '#1E241F', marginBottom: '3px' }}>
+                        <span>{w.label}</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", color: '#7C8479' }}>{w.days}d</span>
+                      </div>
+                      <div style={{ height: '7px', backgroundColor: '#F1EFE6', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', backgroundColor: '#1E8A4F', width: w.val, borderRadius: '999px' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top 5 Recurring Issues */}
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#41624C', marginBottom: '10px' }}>Top 5 Recurring Issues (This Month)</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[
+                    { label: 'Large road potholes', count: 24, val: '95%' },
+                    { label: 'Streetlight pole outages', count: 18, val: '72%' },
+                    { label: 'Waste overflow at bins', count: 15, val: '60%' },
+                    { label: 'Water pipeline leakages', count: 12, val: '48%' },
+                    { label: 'Fallen trees blocking path', count: 8, val: '32%' }
+                  ].map((w, idx) => (
+                    <div key={idx}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: '#1E241F', marginBottom: '3px' }}>
+                        <span>{w.label}</span>
+                        <span style={{ fontFamily: "'Space Mono', monospace", color: '#7C8479' }}>{w.count} units</span>
+                      </div>
+                      <div style={{ height: '7px', backgroundColor: '#F1EFE6', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', backgroundColor: '#A9801C', width: w.val, borderRadius: '999px' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Satisfaction breakdown */}
+            <div style={{ borderTop: '1px solid rgba(30,36,31,0.06)', marginTop: '16px', paddingTop: '14px' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#1E241F', marginBottom: '8px' }}>Citizen Post-Resolution Satisfaction Score</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#1E8A4F', fontFamily: "'Space Mono', monospace" }}>4.6/5.0</div>
+                <div style={{ display: 'flex', gap: '2px', color: '#E8943A', fontSize: '16px' }}>
+                  <span>★</span><span>★</span><span>★</span><span>★</span><span>☆</span>
+                </div>
+                <span style={{ fontSize: '11.5px', color: '#7C8479', fontWeight: 600 }}>(Based on 142 reports audited this month)</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* AI Automated department metrics */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            
+            <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '22px', padding: '18px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+              <div style={{ display: 'flex', items: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 800, color: '#1E241F', marginBottom: '12px' }}>
+                <Sparkle size={16} weight="fill" style={{ color: '#1E8A4F' }} />
+                <span>AI Routing Audit Report</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', fontSize: '12px' }}>
+                <div style={{ display: 'flex', justifyBetween: 'space-between', borderBottom: '1px solid rgba(30,36,31,0.04)', paddingBottom: '6px', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#7C8479' }}>AI Autoclassification accuracy:</span>
+                  <span style={{ fontWeight: 800, color: '#1E241F' }}>94.2%</span>
+                </div>
+                <div style={{ display: 'flex', justifyBetween: 'space-between', borderBottom: '1px solid rgba(30,36,31,0.04)', paddingBottom: '6px', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#7C8479' }}>Automated department routes:</span>
+                  <span style={{ fontWeight: 800, color: '#1E241F' }}>100% routed</span>
+                </div>
+                <div style={{ display: 'flex', justifyBetween: 'space-between', borderBottom: '1px solid rgba(30,36,31,0.04)', paddingBottom: '6px', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#7C8479' }}>Spam / NSFW block filter rate:</span>
+                  <span style={{ fontWeight: 800, color: '#C0603C' }}>1.2% blocked</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: 'linear-gradient(180deg,#E9F4EC,#E3F1E7)', background: '#E3F1E7', border: '1px solid rgba(30,138,79,0.18)', borderRadius: '22px', padding: '18px' }}>
+              <div style={{ display: 'flex', items: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 800, color: '#176B3D', marginBottom: '6px' }}>
+                <CheckCircle size={16} weight="fill" />
+                <span>MCD Performance SLA Review</span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#41624C', lineHeight: 1.4 }}>
+                Your division is currently operating in the **Top 5%** of Delhi Municipal Sectors. Average resolution times are **12% faster** than the MCD citywide average this quarter.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    );
+  };
+
+  return (
+    <div style={{
+      display: 'flex',
+      width: '100%',
+      height: '100vh',
+      backgroundColor: '#F6F4ED',
+      overflow: 'hidden'
+    }}>
+      
+      {/* Sidebar Navigation */}
+      <div style={{
+        width: '280px',
+        backgroundColor: '#1E241F',
+        color: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        borderRight: '1px solid rgba(255,255,255,0.06)',
+        textAlign: 'left'
+      }}>
+        
+        {/* Brand header */}
+        <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <Buildings size={26} weight="fill" style={{ color: '#1E8A4F' }} />
           <div>
-            <div className="text-[15px] font-extrabold text-[#1E241F] mb-[14px]">Issues by category</div>
-            <div className="flex flex-col gap-[13px]">
-              {Object.keys(C).map((catName) => {
-                const count = getCategoryCount(catName);
-                const col = C[catName].c;
-                const percentage = Math.round((count / maxCount) * 100);
-                return (
-                  <div key={catName}>
-                    <div className="flex items-center justify-between text-[12px] font-bold mb-[5px]">
-                      <span className="flex items-center gap-[6px] text-[#1E241F]">
-                        <span style={{ color: col }}>●</span>
-                        {catName}
-                      </span>
-                      <span className="font-mono text-[#7C8479]">{count}</span>
-                    </div>
-                    <div className="h-[9px] bg-[#F1EFE6] rounded-full overflow-hidden">
-                      <div 
-                        className="h-full rounded-full transition-all duration-500" 
-                        style={{ width: `${percentage}%`, backgroundColor: col }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+            <h1 style={{ fontSize: '17px', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.3px' }}>Civic Pulse</h1>
+            <span style={{ fontSize: '9.5px', color: '#829C8B', fontWeight: 700, letterSpacing: '0.05em' }}>MUNICIPAL PORTAL</span>
+          </div>
+        </div>
+
+        {/* Administrator profile */}
+        <div style={{
+          margin: '20px',
+          padding: '14px',
+          borderRadius: '16px',
+          backgroundColor: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.06)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: '#1E8A4F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 850 }}>
+              AD
+            </span>
+            <div>
+              <div style={{ fontSize: '13.5px', fontWeight: 700 }}>Admin Operator</div>
+              <div style={{ fontSize: '10px', color: '#829C8B', fontWeight: 650, marginTop: '2px' }}>MCD Division 4</div>
             </div>
           </div>
-          <div className="flex gap-[11px] mt-[18px] pt-[16px] border-t border-[rgba(30,36,31,0.06)]">
-            <div className="flex-1">
-              <div className="text-[24px] font-extrabold text-[#1E8A4F]">89%</div>
-              <div className="text-[11px] text-[#7C8479] font-bold">Resolution rate</div>
-            </div>
-            <div className="flex-1">
-              <div className="text-[24px] font-extrabold text-[#1E241F]">3.2d</div>
-              <div className="text-[11px] text-[#7C8479] font-bold">Avg time to close</div>
+        </div>
+
+        {/* Navigation links */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <button 
+            onClick={() => setSidebarTab('operations')} 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              width: 'calc(100% - 32px)',
+              margin: '4px 16px',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: sidebarTab === 'operations' ? 'rgba(76, 196, 126, 0.15)' : 'transparent',
+              color: sidebarTab === 'operations' ? '#4CC47E' : '#B2C4B9',
+              fontSize: '14px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s',
+              outline: 'none'
+            }}
+          >
+            <Timer size={20} weight={sidebarTab === 'operations' ? 'fill' : 'regular'} />
+            <span>Operations Triage</span>
+          </button>
+          
+          <button 
+            onClick={() => setSidebarTab('analytics')} 
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              width: 'calc(100% - 32px)',
+              margin: '4px 16px',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: 'none',
+              backgroundColor: sidebarTab === 'analytics' ? 'rgba(76, 196, 126, 0.15)' : 'transparent',
+              color: sidebarTab === 'analytics' ? '#4CC47E' : '#B2C4B9',
+              fontSize: '14px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s',
+              outline: 'none'
+            }}
+          >
+            <ChartBar size={20} weight={sidebarTab === 'analytics' ? 'fill' : 'regular'} />
+            <span>Macro Analytics</span>
+          </button>
+        </div>
+
+        {/* Switch View button */}
+        <div style={{ padding: '20px 16px', marginTop: 'auto' }}>
+          <button 
+            onClick={() => onSwitchRole && onSwitchRole('citizen')}
+            style={{
+              width: '100%',
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              fontSize: '13.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'background-color 0.2s',
+              outline: 'none'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
+          >
+            <DeviceMobile size={16} weight="bold" />
+            Switch to Citizen App
+          </button>
+        </div>
+
+        {/* Sidebar Footer */}
+        <div style={{ padding: '24px 20px', fontSize: '9.5px', color: '#637C6D', fontWeight: 700, letterSpacing: '0.05em', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+          MUNICIPAL CORPORATION OF DELHI
+        </div>
+      </div>
+
+      {/* Right Content Panel */}
+      <div style={{
+        flex: 1,
+        height: '100vh',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative'
+      }}>
+        
+        {/* Header Bar */}
+        <div style={{ 
+          padding: '18px 30px', 
+          backgroundColor: '#fff', 
+          borderBottom: '1px solid rgba(30,36,31,0.06)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          zIndex: 10,
+          flexShrink: 0,
+          textAlign: 'left'
+        }}>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1E241F', margin: 0, letterSpacing: '-0.3px' }}>
+              {sidebarTab === 'operations' ? 'Live Operations Desk' : 'Executive Analytics Desk'}
+            </h2>
+            <div style={{ fontSize: '11.5px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>
+              {sidebarTab === 'operations' 
+                ? 'Triage incoming neighborhood requests, monitor SLAs, and dispatch field crews' 
+                : 'Aggregated GIS metrics, satisfaction reviews, and performance summaries'}
             </div>
           </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Switcheable header indicators */}
+            <span style={{ fontSize: '11px', color: '#176B3D', backgroundColor: '#E3F1E7', padding: '6px 12px', borderRadius: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Sparkle size={13} weight="fill" />
+              Gemini AI Routing Active
+            </span>
+          </div>
+        </div>
+
+        {/* Scrollable Viewport */}
+        <div style={{ flex: 1, padding: '24px 30px', overflowY: 'auto' }}>
+          {sidebarTab === 'operations' ? renderOperations() : renderAnalytics()}
         </div>
 
       </div>
 
       {/* Global Toast */}
       {toast && (
-        <div className="fixed left-1/2 bottom-[26px] -translate-x-1/2 bg-[#16130E] text-white px-[18px] py-[13px] rounded-[13px] text-[13px] font-bold flex items-center gap-[9px] shadow-[0_14px_34px_-8px_rgba(0,0,0,0.5)] z-50 animate-toast">
-          <CheckCircle size={18} weight="fill" className="text-[#4CC47E]" />
+        <div className="animate-toast" style={{ position: 'fixed', left: '50%', bottom: '26px', transform: 'translateX(-50%)', backgroundColor: '#16130E', color: '#fff', padding: '13px 18px', borderRadius: '13px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '9px', boxShadow: '0 14px 34px -8px rgba(0,0,0,0.5)', zIndex: 99999 }}>
+          <CheckCircle size={18} weight="fill" style={{ color: '#4CC47E' }} />
           {toast}
         </div>
       )}

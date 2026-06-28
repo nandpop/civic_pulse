@@ -154,6 +154,42 @@ export async function initDb() {
 
       it.timeline = timelineSteps.filter(t => lvl >= t.reach);
 
+      const DEPARTMENTS = {
+        'Pothole': 'MCD Road Works Dept',
+        'Streetlight': 'MCD Electrical Dept',
+        'Water': 'MCD Water & Sewerage Dept',
+        'Waste': 'MCD Sanitation Dept',
+        'Tree / Park': 'MCD Horticulture Dept',
+        'Other': 'MCD General Administration'
+      };
+
+      const SLA_HOURS = {
+        'Pothole': 24,
+        'Streetlight': 48,
+        'Water': 12,
+        'Waste': 36,
+        'Tree / Park': 72,
+        'Other': 72
+      };
+
+      const dept = DEPARTMENTS[it.cat] || DEPARTMENTS['Other'];
+      const sla = SLA_HOURS[it.cat] || SLA_HOURS['Other'];
+
+      const createdDate = new Date();
+      const ageHoursMap = { '#1042': 2, '#1038': 5, '#1031': 24, '#1019': 4, '#1024': 72, '#1011': 48 };
+      const ageHours = ageHoursMap[it.customId] || 0;
+      createdDate.setHours(createdDate.getHours() - ageHours);
+
+      const dueTime = new Date(createdDate.getTime() + sla * 60 * 60 * 1000).toISOString();
+
+      it.createdAt = createdDate.toISOString();
+      it.dueTime = dueTime;
+      it.slaHours = sla;
+      it.department = dept;
+      it.guardrailStatus = 'Approved';
+      it.assignedAgent = (it.status !== 'Reported' && it.status !== 'Verified') ? 'Team Alpha' : null;
+      it.resolutionImageUrl = it.status === 'Resolved' ? 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&q=80&w=400' : null;
+
       await issuesColl.doc(it.customId).set(it);
     }
   }

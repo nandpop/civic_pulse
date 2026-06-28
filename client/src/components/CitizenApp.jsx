@@ -44,7 +44,7 @@ const S = {
   'Resolved': { fg: '#566056', bg: '#ECEAE1' }
 };
 
-export default function CitizenApp({ triggerRefresh, refreshFlag }) {
+export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }) {
   // Navigation & Data States
   const [screen, setScreen] = useState('home'); // 'home', 'report', 'detail', 'profile'
   const [homeFilter, setHomeFilter] = useState('All');
@@ -2469,6 +2469,35 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
           >
             <Plus size={16} weight="bold" />
             Report an Issue
+          </button>
+        </div>
+
+        {/* Switch View button */}
+        <div style={{ padding: '0 16px 20px' }}>
+          <button 
+            onClick={() => onSwitchRole && onSwitchRole('authority')}
+            style={{
+              width: '100%',
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              fontSize: '13.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'background-color 0.2s',
+              outline: 'none'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
+          >
+            <ShieldCheck size={16} weight="bold" />
+            Switch to Authority Desk
           </button>
         </div>
 

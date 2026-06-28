@@ -43,6 +43,25 @@ if (process.env.GEMINI_API_KEY) {
   console.log('Running Gemini in Mock/Fallback mode (no GEMINI_API_KEY in .env).');
 }
 
+// Category configuration mappings
+const DEPARTMENTS = {
+  'Pothole': 'MCD Road Works Dept',
+  'Streetlight': 'MCD Electrical Dept',
+  'Water': 'MCD Water & Sewerage Dept',
+  'Waste': 'MCD Sanitation Dept',
+  'Tree / Park': 'MCD Horticulture Dept',
+  'Other': 'MCD General Administration'
+};
+
+const SLA_HOURS = {
+  'Pothole': 24,
+  'Streetlight': 48,
+  'Water': 12,
+  'Waste': 36,
+  'Tree / Park': 72,
+  'Other': 72
+};
+
 // ----------------- API ROUTES -----------------
 
 // Fetch current user details
@@ -209,7 +228,7 @@ app.patch('/api/issues/:id/status', async (req, res) => {
 // Create new issue (Citizen App)
 app.post('/api/issues', upload.single('image'), async (req, res) => {
   try {
-    const { title, cat, sev, loc, lat, lng } = req.body;
+    const { title, cat, sev, loc, lat, lng, guardrailStatus } = req.body;
     const n = Math.floor(1043 + Math.random() * 9000);
     const customId = '#' + n;
 
@@ -241,10 +260,18 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
       { label: 'Community verifying', who: '1 neighbors confirmed', reach: 0 }
     ];
 
+    const category = cat || 'Pothole';
+    const dept = DEPARTMENTS[category] || DEPARTMENTS['Other'];
+    const sla = SLA_HOURS[category] || SLA_HOURS['Other'];
+    
+    // Calculate due time
+    const createdDate = new Date();
+    const dueTime = new Date(createdDate.getTime() + sla * 60 * 60 * 1000).toISOString();
+
     const newIssue = {
       customId,
       title: title || 'New reported issue',
-      cat: cat || 'Pothole',
+      cat: category,
       status: 'Reported',
       confirms: 1,
       dist: '0.1 km',
@@ -256,7 +283,13 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
       lng: parseFloat(lng) || 77.2410,
       imageUrl,
       timeline,
-      createdAt: new Date().toISOString()
+      createdAt: createdDate.toISOString(),
+      dueTime,
+      slaHours: sla,
+      department: dept,
+      assignedAgent: null,
+      resolutionImageUrl: null,
+      guardrailStatus: guardrailStatus || 'Approved'
     };
 
     await db.collection('issues').doc(customId).set(newIssue);
@@ -289,6 +322,7 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
     let title = 'New reported issue';
     let severity = 'Medium';
     let confidence = '85%';
+    let guardrailStatus = 'Approved';
 
     if (aiClient) {
       try {
@@ -305,6 +339,7 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
           2. "title": A brief, descriptive title (e.g. "Broken streetlamp pole").
           3. "severity": Must be exactly one of: "Low", "Medium", "High".
           4. "confidence": Estimate your classification confidence percentage (e.g. "95%").
+          5. "guardrail": Must be exactly one of: "Approved", "Flagged". Return "Flagged" if the photo is blurry, irrelevant to civic infrastructure issues (like random selfies, text, documents), or contains inappropriate content. Otherwise, return "Approved".
           
           Do not include markdown blocks, write only raw JSON.
         `;
@@ -322,6 +357,7 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
         if (parsedData.title) title = parsedData.title;
         if (parsedData.severity) severity = parsedData.severity;
         if (parsedData.confidence) confidence = parsedData.confidence;
+        if (parsedData.guardrail) guardrailStatus = parsedData.guardrail;
       } catch (err) {
         console.error('Gemini LLM API call failed, falling back to mock:', err.message);
       }
@@ -363,8 +399,111 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
       category,
       title,
       severity,
-      confidence
+      confidence,
+      guardrailStatus
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH endpoint to assign a field agent / worker to a ticket
+app.patch('/api/issues/:id/assign', async (req, res) => {
+  try {
+    const { agent } = req.body;
+    const docRef = db.collection('issues').doc(req.params.id);
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Issue not found' });
+    
+    const issue = doc.data();
+    let newStatus = issue.status;
+    let timeline = issue.timeline || [];
+    
+    // Auto-advance status to In Progress when assigned
+    if (newStatus === 'Reported' || newStatus === 'Verified') {
+      newStatus = 'In Progress';
+    }
+
+    // Check if Crew assigned timeline step exists
+    const hasCrewStep = timeline.some(t => t.label === 'Crew assigned');
+    if (!hasCrewStep) {
+      timeline.push({
+        label: 'Crew assigned',
+        who: `Field agent ${agent} dispatched`,
+        reach: 2
+      });
+    }
+
+    await docRef.update({
+      assignedAgent: agent,
+      status: newStatus,
+      timeline
+    });
+
+    res.json({ success: true, status: newStatus, assignedAgent: agent });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH endpoint to simulate worker resolution photo upload
+app.patch('/api/issues/:id/resolve', async (req, res) => {
+  try {
+    const { resolutionImageUrl } = req.body;
+    const docRef = db.collection('issues').doc(req.params.id);
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Issue not found' });
+
+    await docRef.update({
+      resolutionImageUrl: resolutionImageUrl || 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&q=80&w=400',
+      status: 'In Progress' // Stays In Progress but resolution image is uploaded for approval
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH endpoint to approve resolution and fully close the ticket
+app.patch('/api/issues/:id/approve', async (req, res) => {
+  try {
+    const docRef = db.collection('issues').doc(req.params.id);
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Issue not found' });
+
+    const issue = doc.data();
+    let timeline = issue.timeline || [];
+
+    // Push Resolved step
+    const hasResolvedStep = timeline.some(t => t.label === 'Resolved');
+    if (!hasResolvedStep) {
+      timeline.push({
+        label: 'Resolved',
+        who: 'Issue closed and verified',
+        reach: 3
+      });
+    }
+
+    await docRef.update({
+      status: 'Resolved',
+      timeline
+    });
+
+    // If the issue was reported by "You", award user points for their reports
+    if (issue.by === 'You') {
+      const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+      if (!userSnapshot.empty) {
+        const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
+        const userData = userSnapshot.docs[0].data();
+        await userRef.update({
+          resolved: (userData.resolved || 0) + 1,
+          points: (userData.points || 0) + 100
+        });
+      }
+    }
+
+    res.json({ success: true, status: 'Resolved' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
