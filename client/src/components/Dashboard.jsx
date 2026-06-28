@@ -636,7 +636,6 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                   <SlaTimer issue={selectedIssue} />
                 </div>
               </div>
-              <span style={{ fontSize: '11px', color: '#5B655B', fontWeight: 700 }}>Deadline: {selectedIssue.slaHours} hrs</span>
             </div>
 
             {/* AI Screening Shield Guardrails */}
