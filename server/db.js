@@ -2,6 +2,7 @@ import { Firestore } from '@google-cloud/firestore';
 
 // Initialize Firestore with custom databaseId
 export const db = new Firestore({
+  projectId: 'remgur-ai',
   databaseId: 'civic-pulse'
 });
 
@@ -53,6 +54,7 @@ export async function initDb() {
         loc: 'Ring Rd, Lajpat Nagar',
         lat: 28.5682,
         lng: 77.2410,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/deep_pothole.webp',
         createdAt: new Date().toISOString()
       },
       {
@@ -68,6 +70,7 @@ export async function initDb() {
         loc: 'Nehru Park',
         lat: 28.5823,
         lng: 77.2185,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/streetlight_out.avif',
         createdAt: new Date().toISOString()
       },
       {
@@ -83,6 +86,7 @@ export async function initDb() {
         loc: 'Aurobindo Marg',
         lat: 28.5620,
         lng: 77.2105,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/water_pipeline_leak_flooding_lane.jpg',
         createdAt: new Date().toISOString()
       },
       {
@@ -98,6 +102,7 @@ export async function initDb() {
         loc: 'Lodhi Garden',
         lat: 28.5915,
         lng: 77.2198,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/fallen_branch_blocking_footpath.webp',
         createdAt: new Date().toISOString()
       },
       {
@@ -113,6 +118,7 @@ export async function initDb() {
         loc: 'Sarojini Market',
         lat: 28.5772,
         lng: 77.1979,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/garbage_overflow.jpg',
         createdAt: new Date().toISOString()
       },
       {
@@ -128,6 +134,7 @@ export async function initDb() {
         loc: 'CR Park',
         lat: 28.5365,
         lng: 77.2510,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/broken_footpath_tile.avif',
         createdAt: new Date().toISOString()
       }
     ];

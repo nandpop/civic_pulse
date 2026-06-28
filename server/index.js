@@ -9,6 +9,7 @@ import vision from '@google-cloud/vision';
 
 // Import db connection
 import { initDb, db } from './db.js';
+import { Storage } from '@google-cloud/storage';
 
 // Setup environment variables
 const __filename = fileURLToPath(import.meta.url);
@@ -22,24 +23,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Ensure uploads folder exists
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir);
-}
-app.use('/uploads', express.static(uploadsDir));
+// Initialize GCS Client
+const storage = new Storage({ projectId: 'remgur-ai' });
+const bucketName = 'civic-pulse-images-remgur-ai';
 
-// Multer Config for uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
+// Multer memory storage config
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Initialize GCP Vision Client if credentials exist
 let visionClient = null;
@@ -232,7 +221,28 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
     const n = Math.floor(1043 + Math.random() * 9000);
     const customId = '#' + n;
 
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+    let imageUrl = null;
+    if (req.file) {
+      const gcsFileName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const blob = storage.bucket(bucketName).file(gcsFileName);
+      
+      const blobStream = blob.createWriteStream({
+        resumable: false,
+        contentType: req.file.mimetype,
+        public: true,
+        metadata: {
+          cacheControl: 'public, max-age=31536000'
+        }
+      });
+
+      await new Promise((resolve, reject) => {
+        blobStream.on('error', err => reject(err));
+        blobStream.on('finish', () => resolve());
+        blobStream.end(req.file.buffer);
+      });
+
+      imageUrl = `https://storage.googleapis.com/${bucketName}/${gcsFileName}`;
+    }
 
     const timeline = [
       { label: 'Reported', who: 'by You · just now', reach: 0 },
@@ -283,7 +293,6 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
       return res.status(400).json({ error: 'No image file uploaded' });
     }
 
-    const filePath = req.file.path;
     let labelText = '';
     let category = 'Pothole';
     let confidence = '92%';
@@ -291,8 +300,8 @@ app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
 
     if (visionClient) {
       try {
-        // Run Google Vision Label Detection
-        const [result] = await visionClient.labelDetection(filePath);
+        // Run Google Vision Label Detection using the memory buffer
+        const [result] = await visionClient.labelDetection(req.file.buffer);
         const labels = result.labelAnnotations || [];
         
         labelText = labels.map(l => l.description.toLowerCase()).join(' ');
