@@ -132,6 +132,54 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
     return () => { delete window.openIssueDetail; };
   }, []);
 
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+        headers: {
+          'Accept-Language': 'en'
+        }
+      });
+      const data = await res.json();
+      if (data && data.address) {
+        const road = data.address.road || data.address.suburb || '';
+        const suburb = data.address.suburb || data.address.city_district || '';
+        const city = data.address.city || data.address.town || 'Delhi';
+        const parts = [road, suburb, city].filter(Boolean);
+        if (parts.length > 0) {
+          setDraftAddr(parts.join(', '));
+          return;
+        }
+      }
+      setDraftAddr(`GPS Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+    } catch (err) {
+      setDraftAddr(`GPS Location (${lat.toFixed(5)}, ${lng.toFixed(5)})`);
+    }
+  };
+
+  const fetchCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setSelectedCoords(coords);
+          reverseGeocode(coords.lat, coords.lng);
+        },
+        (error) => {
+          console.error("Error fetching location", error);
+        }
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (reportStep === 3 && screen === 'report') {
+      fetchCurrentLocation();
+    }
+  }, [reportStep, screen]);
+
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 2600);
@@ -1898,7 +1946,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                   selectedLocation={selectedCoords}
                   onLocationSelect={(coords) => {
                     setSelectedCoords(coords);
-                    setDraftAddr(`Plot ${Math.floor(Math.random()*100+1)}, Lajpat Nagar, Delhi`);
+                    reverseGeocode(coords.lat, coords.lng);
                   }}
                   zoom={15}
                   interactive={true}
