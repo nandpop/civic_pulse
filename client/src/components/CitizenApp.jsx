@@ -972,6 +972,15 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </span>
         </div>
 
+        {selectedIssue.resolutionImageUrl && (
+          <div style={{ padding: '12px 18px 0' }}>
+            <div style={{ fontSize: '11px', fontWeight: 800, color: '#1E8A4F', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resolution Evidence (MCD Fix)</div>
+            <div style={{ borderRadius: '14px', overflow: 'hidden', height: '160px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative' }}>
+              <img src={selectedIssue.resolutionImageUrl} alt="Resolution" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          </div>
+        )}
+
         {/* Title & Metadata */}
         <div style={{ padding: '16px 18px 0' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px', marginTop: '2px' }}>
@@ -1006,24 +1015,26 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </div>
 
           {/* Confirmation Action Button */}
-          {selectedIssue.by === 'You' ? (
-            <div style={{ width: '100%', marginTop: '13px', backgroundColor: '#F1EFE6', color: '#7C8479', borderRadius: '14px', padding: '14px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(30,36,31,0.06)' }}>
-              <Info size={18} weight="fill" style={{ color: '#8A8678' }} />
-              You cannot upvote your own report
-            </div>
-          ) : !confirmedMap[selectedIssue.customId] ? (
-            <button 
-              onClick={handleConfirmIssue}
-              style={{ width: '100%', marginTop: '13px', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 6px 16px -6px rgba(30,138,79,0.5)', outline: 'none' }}
-            >
-              <HandPointing size={16} weight="fill" />
-              I've seen this — confirm it
-            </button>
-          ) : (
-            <div style={{ width: '100%', marginTop: '13px', backgroundColor: '#E3F1E7', color: '#176B3D', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, display: 'flex', alignItems: 'center', justify: 'center', gap: '8px' }}>
-              <CheckCircle size={18} weight="fill" />
-              You confirmed this issue
-            </div>
+          {selectedIssue.status !== 'In Progress' && selectedIssue.status !== 'Resolved' && (
+            selectedIssue.by === 'You' ? (
+              <div style={{ width: '100%', marginTop: '13px', backgroundColor: '#F1EFE6', color: '#7C8479', borderRadius: '14px', padding: '14px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(30,36,31,0.06)' }}>
+                <Info size={18} weight="fill" style={{ color: '#8A8678' }} />
+                You cannot upvote your own report
+              </div>
+            ) : !confirmedMap[selectedIssue.customId] ? (
+              <button 
+                onClick={handleConfirmIssue}
+                style={{ width: '100%', marginTop: '13px', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 6px 16px -6px rgba(30,138,79,0.5)', outline: 'none' }}
+              >
+                <HandPointing size={16} weight="fill" />
+                I've seen this — confirm it
+              </button>
+            ) : (
+              <div style={{ width: '100%', marginTop: '13px', backgroundColor: '#E3F1E7', color: '#176B3D', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, display: 'flex', alignItems: 'center', justify: 'center', gap: '8px' }}>
+                <CheckCircle size={18} weight="fill" />
+                You confirmed this issue
+              </div>
+            )
           )}
 
           {/* AI Insights Card */}
@@ -2048,6 +2059,16 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             </span>
           </div>
 
+          {/* Resolution Evidence (Desktop View) */}
+          {selectedIssue.resolutionImageUrl && (
+            <div style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', height: '240px', backgroundColor: '#EAE8DE', border: '1px solid rgba(30,36,31,0.08)', boxShadow: '0 4px 15px rgba(0,0,0,0.04)' }}>
+              <img src={selectedIssue.resolutionImageUrl} alt="Resolved" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: '#1E8A4F', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '5px' }}>
+                RESOLVED EVIDENCE (MCD Fix)
+              </div>
+            </div>
+          )}
+
           {/* Metrics Grid */}
           <div style={{ display: 'flex', gap: '12px' }}>
             <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
@@ -2089,27 +2110,29 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </div>
 
           {/* Action upvote button */}
-          <div style={{ marginTop: '18px' }}>
-            {selectedIssue.by === 'You' ? (
-              <div style={{ width: '100%', backgroundColor: '#F1EFE6', color: '#7C8479', borderRadius: '14px', padding: '14px', fontSize: '13.5px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(30,36,31,0.06)' }}>
-                <Info size={18} weight="fill" style={{ color: '#8A8678' }} />
-                You cannot upvote your own report
-              </div>
-            ) : !confirmedMap[selectedIssue.customId] ? (
-              <button 
-                onClick={handleConfirmIssue}
-                style={{ width: '100%', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 6px 16px -6px rgba(30,138,79,0.4)', transition: 'background-color 0.15s', outline: 'none' }}
-              >
-                <HandPointing size={18} weight="fill" />
-                I've seen this issue — Confirm to Upvote
-              </button>
-            ) : (
-              <div style={{ width: '100%', backgroundColor: '#E3F1E7', color: '#176B3D', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, display: 'flex', alignItems: 'center', justify: 'center', gap: '8px' }}>
-                <CheckCircle size={18} weight="fill" />
-                You have successfully confirmed this issue
-              </div>
-            )}
-          </div>
+          {selectedIssue.status !== 'In Progress' && selectedIssue.status !== 'Resolved' && (
+            <div style={{ marginTop: '18px' }}>
+              {selectedIssue.by === 'You' ? (
+                <div style={{ width: '100%', backgroundColor: '#F1EFE6', color: '#7C8479', borderRadius: '14px', padding: '14px', fontSize: '13.5px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(30,36,31,0.06)' }}>
+                  <Info size={18} weight="fill" style={{ color: '#8A8678' }} />
+                  You cannot upvote your own report
+                </div>
+              ) : !confirmedMap[selectedIssue.customId] ? (
+                <button 
+                  onClick={handleConfirmIssue}
+                  style={{ width: '100%', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 6px 16px -6px rgba(30,138,79,0.4)', transition: 'background-color 0.15s', outline: 'none' }}
+                >
+                  <HandPointing size={18} weight="fill" />
+                  I've seen this issue — Confirm to Upvote
+                </button>
+              ) : (
+                <div style={{ width: '100%', backgroundColor: '#E3F1E7', color: '#176B3D', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, display: 'flex', alignItems: 'center', justify: 'center', gap: '8px' }}>
+                  <CheckCircle size={18} weight="fill" />
+                  You have successfully confirmed this issue
+                </div>
+              )}
+            </div>
+          )}
 
           {/* AI Info Card */}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', backgroundColor: '#F1EFE6', borderRadius: '14px', padding: '14px', marginTop: '18px' }}>

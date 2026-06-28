@@ -461,20 +461,44 @@ app.patch('/api/issues/:id/assign', async (req, res) => {
   }
 });
 
-// PATCH endpoint to simulate worker resolution photo upload
-app.patch('/api/issues/:id/resolve', async (req, res) => {
+// PATCH endpoint to simulate/upload worker resolution photo
+app.patch('/api/issues/:id/resolve', upload.single('resolutionImage'), async (req, res) => {
   try {
-    const { resolutionImageUrl } = req.body;
+    let resolutionImageUrl = req.body.resolutionImageUrl;
+
+    // If an actual image file was uploaded, store it in Google Cloud Storage
+    if (req.file) {
+      const gcsFileName = `resolved-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const blob = storage.bucket(bucketName).file(gcsFileName);
+      
+      const blobStream = blob.createWriteStream({
+        resumable: false,
+        contentType: req.file.mimetype,
+        metadata: {
+          cacheControl: 'public, max-age=31536000',
+        }
+      });
+
+      await new Promise((resolve, reject) => {
+        blobStream.on('error', (err) => reject(err));
+        blobStream.on('finish', () => resolve());
+        blobStream.end(req.file.buffer);
+      });
+
+      const projectId = 'remgur-ai';
+      resolutionImageUrl = `https://storage.googleapis.com/civic-pulse-images-${projectId}/${gcsFileName}`;
+    }
+
     const docRef = db.collection('issues').doc(req.params.id);
     const doc = await docRef.get();
     if (!doc.exists) return res.status(404).json({ error: 'Issue not found' });
 
     await docRef.update({
-      resolutionImageUrl: resolutionImageUrl || 'https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&q=80&w=400',
+      resolutionImageUrl: resolutionImageUrl || null,
       status: 'In Progress' // Stays In Progress but resolution image is uploaded for approval
     });
 
-    res.json({ success: true });
+    res.json({ success: true, resolutionImageUrl });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

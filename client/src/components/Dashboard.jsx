@@ -167,6 +167,7 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
   const [opView, setOpView] = useState('kanban'); // 'triage', 'kanban'
   const [toast, setToast] = useState('');
   const [loadingIssues, setLoadingIssues] = useState(false);
+  const [uploadingEv, setUploadingEv] = useState(false);
 
   useEffect(() => {
     fetchIssues();
@@ -233,32 +234,28 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
     }
   };
 
-  const handleSimulateResolve = async (id, cat) => {
-    // Mock resolution images based on issue category
-    const mockResolutions = {
-      'Pothole': 'https://images.unsplash.com/photo-1515162305285-0293e4767cc2?auto=format&fit=crop&q=80&w=600',
-      'Streetlight': 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&q=80&w=600',
-      'Water': 'https://images.unsplash.com/photo-1548810931-e6b4a6453291?auto=format&fit=crop&q=80&w=600',
-      'Waste': 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&q=80&w=600',
-      'Tree / Park': 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&q=80&w=600',
-      'Other': 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&q=80&w=600'
-    };
-    const resolutionUrl = mockResolutions[cat] || mockResolutions['Other'];
+  const handleUploadEvidence = async (id, file) => {
+    if (!file) return;
+    setUploadingEv(true);
+    const formData = new FormData();
+    formData.append('resolutionImage', file);
 
     try {
       const res = await fetch(`/api/issues/${encodeURIComponent(id)}/resolve`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resolutionImageUrl: resolutionUrl })
+        body: formData
       });
       const data = await res.json();
       if (data.success) {
-        showToast('Worker uploaded resolution photo!');
+        showToast('Resolution evidence uploaded successfully!');
         fetchIssues();
         if (triggerRefresh) triggerRefresh();
       }
     } catch (err) {
       console.error(err);
+      showToast('Evidence upload failed.');
+    } finally {
+      setUploadingEv(false);
     }
   };
 
@@ -738,8 +735,8 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
             {/* Dispatch / Resolution actions */}
             <div style={{ marginTop: 'auto', paddingTop: '10px' }}>
               
-              {/* Action 1: Dispatch crew (if not assigned) */}
-              {selectedIssue.status !== 'Resolved' && !selectedIssue.assignedAgent && (
+              {/* Action 1: Dispatch crew (only for Reported or Verified status) */}
+              {(selectedIssue.status === 'Reported' || selectedIssue.status === 'Verified') && (
                 <div>
                   <label style={{ fontSize: '11px', fontWeight: 700, color: '#41624C', display: 'block', marginBottom: '6px' }}>Dispatch Field Crew / Vendor</label>
                   <select 
@@ -755,15 +752,56 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
                 </div>
               )}
 
-              {/* Action 2: Simulate resolution upload (if In Progress but resolution image not uploaded) */}
+              {/* Action 2: Upload Resolution Evidence (if In Progress but resolution image not uploaded) */}
               {selectedIssue.status === 'In Progress' && selectedIssue.assignedAgent && !selectedIssue.resolutionImageUrl && (
-                <button 
-                  onClick={() => handleSimulateResolve(selectedIssue.customId, selectedIssue.cat)}
-                  style={{ width: '100%', backgroundColor: '#357FD6', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(53,127,214,0.3)', outline: 'none' }}
-                >
-                  <Wrench size={16} weight="fill" />
-                  Simulate Worker Resolution Upload
-                </button>
+                <div style={{ backgroundColor: '#F6F4ED', border: '1.5px dashed #357FD6', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#2C5D9E', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Wrench size={16} weight="fill" />
+                    <span>Upload Resolution Evidence</span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#5B655B', margin: 0 }}>
+                    Please upload a photo of the completed work to submit it for municipal moderator review.
+                  </p>
+                  
+                  <input 
+                    type="file" 
+                    id="evidence-file-input"
+                    accept="image/*"
+                    disabled={uploadingEv}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        handleUploadEvidence(selectedIssue.customId, file);
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+
+                  <button 
+                    disabled={uploadingEv}
+                    onClick={() => document.getElementById('evidence-file-input').click()}
+                    style={{
+                      width: '100%',
+                      backgroundColor: '#357FD6',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 12px rgba(53,127,214,0.25)',
+                      outline: 'none',
+                      opacity: uploadingEv ? 0.7 : 1
+                    }}
+                  >
+                    {uploadingEv ? 'Uploading Evidence...' : 'Choose Photo & Upload'}
+                  </button>
+                </div>
               )}
 
               {/* Action 3: Before & After verification review (if resolution image exists for approval) */}
