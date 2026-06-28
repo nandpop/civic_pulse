@@ -2313,7 +2313,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
     <div style={{
       position: 'relative',
       width: '100%',
-      height: '100vh',
+      height: '100dvh',
       backgroundColor: '#F6F4ED',
       display: 'flex',
       flexDirection: 'column',
@@ -2333,7 +2333,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
 
       {/* Tab Navigation Bar */}
       {screen !== 'report' && (
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '84px', backgroundColor: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(30,36,31,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0 14px 14px', zIndex: 30 }}>
+        <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, height: '84px', backgroundColor: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(30,36,31,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0 14px 14px', zIndex: 30 }}>
           <button 
             onClick={() => setScreen('home')}
             style={navBtnStyle(screen === 'home')}
@@ -2593,7 +2593,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
   );
 
   return (
-    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100dvh', position: 'relative' }}>
       {isMobileView ? renderMobileView() : renderDesktopView()}
 
       {/* Global Toast */}
