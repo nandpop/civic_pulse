@@ -975,7 +975,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         {selectedIssue.resolutionImageUrl && (
           <div style={{ padding: '12px 18px 0' }}>
             <div style={{ fontSize: '11px', fontWeight: 800, color: '#1E8A4F', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resolution Evidence (MCD Fix)</div>
-            <div style={{ borderRadius: '14px', overflow: 'hidden', height: '160px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative' }}>
+            <div style={{ borderRadius: '14px', overflow: 'hidden', height: '210px', border: '1px solid rgba(30,36,31,0.08)', position: 'relative' }}>
               <img src={selectedIssue.resolutionImageUrl} alt="Resolution" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           </div>
@@ -998,21 +998,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             </div>
           </div>
 
-          {/* Metrics boxes */}
-          <div style={{ display: 'flex', gap: '9px', marginTop: '14px' }}>
-            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '13px', padding: '11px', textAlign: 'center' }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '18px', fontWeight: 700, color: '#1E8A4F' }}>{selectedIssue.confirms}</div>
-              <div style={{ fontSize: '10.5px', color: '#7C8479', fontWeight: 600, marginTop: '1px' }}>CONFIRMATIONS</div>
-            </div>
-            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '13px', padding: '11px', textAlign: 'center' }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '18px', fontWeight: 700 }}>{selectedIssue.sev}</div>
-              <div style={{ fontSize: '10.5px', color: '#7C8479', fontWeight: 600, marginTop: '1px' }}>SEVERITY</div>
-            </div>
-            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '13px', padding: '11px', textAlign: 'center' }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '18px', fontWeight: 700 }}>{selectedIssue.dist}</div>
-              <div style={{ fontSize: '10.5px', color: '#7C8479', fontWeight: 600, marginTop: '1px' }}>AWAY</div>
-            </div>
-          </div>
+
 
           {/* Confirmation Action Button */}
           {selectedIssue.status !== 'In Progress' && selectedIssue.status !== 'Resolved' && (
@@ -1037,17 +1023,27 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             )
           )}
 
-          {/* AI Insights Card */}
-          <div style={{ display: 'flex', gap: '9px', alignItems: 'flex-start', backgroundColor: '#F1EFE6', borderRadius: '13px', padding: '12px', marginTop: '13px' }}>
-            <Sparkle size={16} weight="fill" style={{ color: '#1E8A4F', marginTop: '1px' }} />
-            <div style={{ fontSize: '12px', color: '#5B655B', lineHeight: 1.35 }}>
-              <b style={{ color: '#41624C' }}>AI insight:</b> similar issues in this area were resolved in <b>~3.2 days</b>. Verified pothole reports are prioritized for the next paving route.
-            </div>
-          </div>
+
 
           {/* Timeline */}
           <div style={{ fontSize: '14px', fontWeight: 800, margin: '20px 2px 12px' }}>Progress timeline</div>
           {renderTimeline(selectedIssue)}
+
+          {/* Metrics boxes */}
+          <div style={{ display: 'flex', gap: '9px', marginTop: '20px' }}>
+            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '13px', padding: '11px', textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '18px', fontWeight: 700, color: '#1E8A4F' }}>{selectedIssue.confirms}</div>
+              <div style={{ fontSize: '10.5px', color: '#7C8479', fontWeight: 600, marginTop: '1px' }}>CONFIRMATIONS</div>
+            </div>
+            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '13px', padding: '11px', textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '18px', fontWeight: 700 }}>{selectedIssue.sev}</div>
+              <div style={{ fontSize: '10.5px', color: '#7C8479', fontWeight: 600, marginTop: '1px' }}>SEVERITY</div>
+            </div>
+            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '13px', padding: '11px', textAlign: 'center' }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '18px', fontWeight: 700 }}>{selectedIssue.dist}</div>
+              <div style={{ fontSize: '10.5px', color: '#7C8479', fontWeight: 600, marginTop: '1px' }}>AWAY</div>
+            </div>
+          </div>
 
         </div>
       </div>
@@ -2061,7 +2057,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
 
           {/* Resolution Evidence (Desktop View) */}
           {selectedIssue.resolutionImageUrl && (
-            <div style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', height: '240px', backgroundColor: '#EAE8DE', border: '1px solid rgba(30,36,31,0.08)', boxShadow: '0 4px 15px rgba(0,0,0,0.04)' }}>
+            <div style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', height: '340px', backgroundColor: '#EAE8DE', border: '1px solid rgba(30,36,31,0.08)', boxShadow: '0 4px 15px rgba(0,0,0,0.04)' }}>
               <img src={selectedIssue.resolutionImageUrl} alt="Resolved" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <div style={{ position: 'absolute', bottom: '12px', left: '12px', backgroundColor: '#1E8A4F', color: '#fff', fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '5px' }}>
                 RESOLVED EVIDENCE (MCD Fix)
@@ -2069,21 +2065,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             </div>
           )}
 
-          {/* Metrics Grid */}
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '22px', fontWeight: 800, color: '#1E8A4F' }}>{selectedIssue.confirms}</div>
-              <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 700, marginTop: '4px' }}>CONFIRMATIONS</div>
-            </div>
-            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '22px', fontWeight: 800 }}>{selectedIssue.sev}</div>
-              <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 700, marginTop: '4px' }}>SEVERITY</div>
-            </div>
-            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
-              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '22px', fontWeight: 800 }}>{selectedIssue.dist}</div>
-              <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 700, marginTop: '4px' }}>AWAY</div>
-            </div>
-          </div>
+
         </div>
 
         {/* Right Side: Timeline & Details */}
@@ -2134,18 +2116,28 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             </div>
           )}
 
-          {/* AI Info Card */}
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', backgroundColor: '#F1EFE6', borderRadius: '14px', padding: '14px', marginTop: '18px' }}>
-            <Sparkle size={18} weight="fill" style={{ color: '#1E8A4F', marginTop: '2px' }} />
-            <div style={{ fontSize: '12.5px', color: '#5B655B', lineHeight: 1.4 }}>
-              <b style={{ color: '#41624C' }}>AI Analysis:</b> Pothole clusters verified on this street show a standard turnaround time of <b>3.2 days</b>. Upvoting reports helps prompt immediate MCD scheduling.
-            </div>
-          </div>
+
 
           {/* Timeline progress */}
           <div style={{ borderTop: '1px solid rgba(30,36,31,0.06)', marginTop: '24px', paddingTop: '20px' }}>
             <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#1E241F', margin: '0 0 16px' }}>Progress Timeline</h4>
             {renderTimeline(selectedIssue)}
+          </div>
+
+          {/* Metrics Grid */}
+          <div style={{ display: 'flex', gap: '12px', marginTop: '24px', borderTop: '1px solid rgba(30,36,31,0.06)', paddingTop: '20px' }}>
+            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '22px', fontWeight: 800, color: '#1E8A4F' }}>{selectedIssue.confirms}</div>
+              <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 700, marginTop: '4px' }}>CONFIRMATIONS</div>
+            </div>
+            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '22px', fontWeight: 800 }}>{selectedIssue.sev}</div>
+              <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 700, marginTop: '4px' }}>SEVERITY</div>
+            </div>
+            <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+              <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '22px', fontWeight: 800 }}>{selectedIssue.dist}</div>
+              <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 700, marginTop: '4px' }}>AWAY</div>
+            </div>
           </div>
         </div>
       </div>
