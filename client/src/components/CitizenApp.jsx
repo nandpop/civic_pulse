@@ -583,22 +583,41 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
     <div style={{ padding: '8px 18px 120px', textAlign: 'left' }}>
       
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0 14px' }}>
-        <button 
-          onClick={() => {
-            if (reportStep > 1) setReportStep(reportStep - 1);
-            else setScreen('home');
-          }}
-          style={{ width: '36px', height: '36px', borderRadius: '11px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
-        >
-          <ArrowLeft size={16} weight="bold" />
-        </button>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '16px', fontWeight: 800 }}>Report an issue</div>
-          <div style={{ fontSize: '11.5px', color: '#7C8479', fontWeight: 600 }}>
-            Step {reportStep} of 4 · {['Add photo', 'Details', 'Location', 'Review'][reportStep - 1]}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0 14px', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            onClick={() => {
+              if (reportStep > 1) setReportStep(reportStep - 1);
+              else setScreen('home');
+            }}
+            style={{ width: '36px', height: '36px', borderRadius: '11px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
+          >
+            <ArrowLeft size={16} weight="bold" />
+          </button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '16px', fontWeight: 800 }}>Report an issue</div>
+            <div style={{ fontSize: '11.5px', color: '#7C8479', fontWeight: 600 }}>
+              Step {reportStep} of 4 · {['Add photo', 'Details', 'Location', 'Review'][reportStep - 1]}
+            </div>
           </div>
         </div>
+        {reportStep === 1 && selectedFile && (
+          <button
+            onClick={() => {
+              setSelectedFile(null);
+              setPreviewImageUrl('');
+              setAiDone(false);
+              setAiThinking(false);
+              setDraftCategory('');
+              setDraftTitle('');
+              setDraftSev('Medium');
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.12)', borderRadius: '9px', padding: '6px 11px', fontSize: '12px', fontWeight: 700, color: '#5B655B', cursor: 'pointer', outline: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            <ArrowLeft size={12} weight="bold" />
+            Change Photo
+          </button>
+        )}
       </div>
 
       {/* Progress Bar */}
@@ -671,21 +690,6 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
                 <div style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: 'rgba(22,19,14,0.6)', color: '#fff', fontSize: '10px', fontFamily: "'Space Mono', monospace", padding: '4px 9px', borderRadius: '7px' }}>
                   {selectedFile.name.substring(0, 20)}
                 </div>
-                <button
-                  onClick={() => {
-                    setSelectedFile(null);
-                    setPreviewImageUrl('');
-                    setAiDone(false);
-                    setAiThinking(false);
-                    setDraftCategory('');
-                    setDraftTitle('');
-                    setDraftSev('Medium');
-                  }}
-                  style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: 'rgba(22,19,14,0.65)', color: '#fff', border: 'none', borderRadius: '9px', padding: '6px 11px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', outline: 'none', backdropFilter: 'blur(4px)' }}
-                >
-                  <ArrowLeft size={13} weight="bold" />
-                  Change Photo
-                </button>
               </div>
 
               {aiThinking && (
@@ -1658,21 +1662,40 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
       <div style={{ width: '100%', maxWidth: '650px', backgroundColor: '#fff', borderRadius: '24px', border: '1px solid rgba(30,36,31,0.07)', boxShadow: '0 4px 20px rgba(28,33,24,0.04)', padding: '30px' }}>
         
         {/* Step Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px', textAlign: 'left' }}>
-          {reportStep > 1 && (
-            <button 
-              onClick={() => setReportStep(reportStep - 1)}
-              style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px', textAlign: 'left', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {reportStep > 1 && (
+              <button 
+                onClick={() => setReportStep(reportStep - 1)}
+                style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none', flexShrink: 0 }}
+              >
+                <ArrowLeft size={16} weight="bold" />
+              </button>
+            )}
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#1E241F' }}>Step {reportStep} of 4</h3>
+              <span style={{ fontSize: '12.5px', color: '#7C8479', fontWeight: 600 }}>
+                {['Upload Issue Photo', 'Provide Details', 'Select Map Location', 'Review and Submit'][reportStep - 1]}
+              </span>
+            </div>
+          </div>
+          {reportStep === 1 && selectedFile && (
+            <button
+              onClick={() => {
+                setSelectedFile(null);
+                setPreviewImageUrl('');
+                setAiDone(false);
+                setAiThinking(false);
+                setDraftCategory('');
+                setDraftTitle('');
+                setDraftSev('Medium');
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.12)', borderRadius: '9px', padding: '6px 11px', fontSize: '12px', fontWeight: 700, color: '#5B655B', cursor: 'pointer', outline: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
             >
-              <ArrowLeft size={16} weight="bold" />
+              <ArrowLeft size={12} weight="bold" />
+              Change Photo
             </button>
           )}
-          <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: '#1E241F' }}>Step {reportStep} of 4</h3>
-            <span style={{ fontSize: '12.5px', color: '#7C8479', fontWeight: 600 }}>
-              {['Upload Issue Photo', 'Provide Details', 'Select Map Location', 'Review and Submit'][reportStep - 1]}
-            </span>
-          </div>
         </div>
 
         {/* Progress Line */}
@@ -1703,15 +1726,8 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
                   
                   <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '380px' }}>
                     <button 
-                      onClick={() => cameraInputRef.current.click()}
-                      style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 10px', fontSize: '13.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
-                    >
-                      <Camera size={16} weight="fill" />
-                      Take Photo
-                    </button>
-                    <button 
                       onClick={() => galleryInputRef.current.click()}
-                      style={{ flex: 1, backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '13px 10px', fontSize: '13.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
+                      style={{ width: '100%', backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '13px 10px', fontSize: '13.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
                     >
                       Upload Photo
                     </button>
