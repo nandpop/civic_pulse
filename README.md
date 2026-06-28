@@ -1,6 +1,6 @@
 # Civic Pulse
 
-Civic Pulse is a hyperlocal civic issue reporting platform designed for citizens to report, track, and verify local issues like potholes, faulty streetlights, waste overflow, and water pipeline leaks. It features AI-powered image analysis for automated issue categorization and a smart point-and-badge-based community validation system.
+Civic Pulse is a hyperlocal civic issue reporting platform designed for citizens to report, track, and verify local issues like potholes, faulty streetlights, waste overflow, and water pipeline leaks. It features AI-powered image/video analysis for automated issue categorization and a smart point-and-badge-based community validation system.
 
 ## 📁 Repository Structure
 
@@ -11,7 +11,7 @@ Civic Pulse/
 ├── client/                 # React + Vite frontend application
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── CitizenApp.jsx             # Main Citizen App view and wizard controller
+│   │   │   ├── CitizenApp.jsx             # Main Citizen App view, swiper, and wizard controller
 │   │   │   ├── Dashboard.jsx              # Admin / Municipal review dashboard
 │   │   │   └── GoogleMapsContainer.jsx    # GIS Map container (Google Maps + Leaflet fallback)
 │   │   ├── App.jsx                        # Entry App component
@@ -38,9 +38,9 @@ Civic Pulse/
 ### Backend (Server)
 *   **Node.js** & **Express**
 *   **Google Cloud Firestore** (NoSQL Database)
-*   **Google Cloud Storage (GCS)** (Image uploads storage)
-*   **Google Gen AI (Gemini 2.5 Flash)** (Vision analysis engine via `@google/genai`)
-*   **Multer** (in-memory image upload handling)
+*   **Google Cloud Storage (GCS)** (Image/video uploads storage)
+*   **Google Gen AI (Gemini 2.5 Flash)** (Vision/Video analysis engine via `@google/genai`)
+*   **Multer** (in-memory file upload handling)
 
 ---
 
@@ -53,7 +53,7 @@ Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
 Create configurations for both the client and server.
 
 #### Root Configuration
-Copy the template at the root to create your environments or check local folders:
+Copy the template at the root to create your environments:
 ```bash
 cp .env.template .env
 ```
@@ -65,7 +65,7 @@ VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
 
 #### Server Configuration (`server/.env`)
-Provide the Gemini API Key to enable vision scanning:
+Provide the Gemini API Key to enable vision and video scanning:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
@@ -94,23 +94,36 @@ npm run dev
 | `GET` | `/api/users/leaderboard` | Fetches neighbor leaderboard sorted by points descending |
 | `GET` | `/api/issues` | Fetches issues list (supports category/status filter query parameters) |
 | `GET` | `/api/issues/:id` | Fetches timeline details and metadata of an individual issue |
-| `POST` | `/api/issues` | Files a new issue (supports file attachment, uploads to GCS, seeds points) |
+| `POST` | `/api/issues` | Files a new issue (supports file attachment, uploads to GCS, checks duplicates, seeds points) |
 | `POST` | `/api/issues/:id/confirm` | Confirm/Upvote an issue. (Auto-verifies if confirms reach $\ge 4$) |
+| `POST` | `/api/issues/:id/reject` | Reject/Flag an issue. (Auto-flags and hides from feeds if rejects reach $\ge 3$) |
 | `PATCH` | `/api/issues/:id/status` | Admin-level status update (adjusts timeline, awards resolution points) |
-| `POST` | `/api/analyze-image` | Uses Gemini 2.5 Flash Vision API to analyze civic issue images |
+| `POST` | `/api/analyze-image` | Uses Gemini 2.5 Flash Vision/Multimodal API to analyze civic issue images/videos |
 
 ---
 
 ## 🌟 Key Features
 
-### 1. Smart AI Image Scanner
-When reporting an issue, upload an image of the problem (e.g., a pothole). The server sends this to the **Gemini 2.5 Flash API**, which returns an automated category classification, title suggestion, and severity estimation. If the API is offline or keyless, the system falls back to regex-based filename heuristics.
+### 1. Smart AI Image & Video Scanner
+When reporting an issue, citizens can upload a photo or video. The server passes this media to **Gemini 2.5 Flash**, analyzing frames and text context to suggest automated category classification, title suggestions, and severity estimation.
 
-### 2. Community Upvote & Auto-Verification
-Citizens can browse issues on the neighborhood feed and "Confirm" reports. When a reported issue receives **4 community confirmations**, the system automatically upgrades its status to **Verified** and appends it to the MCD (Municipal Corporation of Delhi) crew dispatch queue.
+### 2. Smart Deduplication (Clustering)
+Prevents duplicate tickets from overwhelming the municipal desk. When a report is filed within `100 meters` of an unresolved issue of the same category, Gemini compares description and image similarity. If verified as a duplicate, the report is merged into a high-priority **"Mega-Ticket"**, consolidating confirmations and list contributors.
 
-### 3. Interactive Map (Dual GIS Rendering)
-Integrates interactive map visualizations. The code uses `GoogleMapsContainer` which loads Google Maps, but actively hooks into `window.gm_authFailure` and `loadError`. If API loading fails, it shifts the layout to **Leaflet (OpenStreetMap Circle Markers)** dynamically, ensuring full functionality with zero map key friction.
+### 3. Gamified Verification (Swipe to Moderate)
+A dedicated **Verify** swipe interface prompts citizens with unverified local reports within a `1.0 km` radius. Users swipe Right to confirm/verify or Left to reject (fake/fixed). Each action awards **+10 Pulse Points**. If rejects reach `3`, the report is flagged and routed to the authority's Flagged queue.
 
-### 4. Gamified Impact Progress
+### 4. Auto Geolocation & Reverse Geocoding
+Automatically captures the reporter's GPS coordinates and reverse-geocodes them into real, street-level addresses (using Nominatim/OpenStreetMap API) rather than random numbers or coordinates.
+
+### 5. Enhanced Department Routing
+Automated keyword-based municipal department assignment:
+*   *Potholes & Footpaths* ➡️ `MCD Road Works Dept`
+*   *Garbage & Waste* ➡️ `PWD Sanitation Dept`
+*   *Trees & Parks* ➡️ `MCD Horticulture Dept`
+
+### 6. Interactive Map (Dual GIS Rendering)
+Uses `GoogleMapsContainer` which loads Google Maps, but actively hooks into `window.gm_authFailure` and `loadError`. If API loading fails, it shifts the layout to **Leaflet (OpenStreetMap Circle Markers)** dynamically, ensuring full functionality with zero map key friction.
+
+### 7. Gamified Impact Progress
 Citizens gain **Pulse Points** for contributions (+50 points for filing, +10 points for verifying/upvoting, +100 points when reported issue gets resolved). Badges (e.g., *Eagle Eye*, *Streak Builder*) and neighborhood leaderboard rankings incentivize community involvement.
