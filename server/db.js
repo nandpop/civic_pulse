@@ -1,77 +1,44 @@
-import { Sequelize, DataTypes } from 'sequelize';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { Firestore } from '@google-cloud/firestore';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Initialize Sequelize with SQLite
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: process.env.DATABASE_STORAGE || path.join(__dirname, 'database.sqlite'),
-  logging: false
+// Initialize Firestore with custom databaseId
+export const db = new Firestore({
+  databaseId: 'civic-pulse'
 });
-
-// Define Models
-export const User = sequelize.define('User', {
-  name: { type: DataTypes.STRING, allowNull: false },
-  points: { type: DataTypes.INTEGER, defaultValue: 1240 },
-  reports: { type: DataTypes.INTEGER, defaultValue: 18 },
-  resolved: { type: DataTypes.INTEGER, defaultValue: 7 },
-  streak: { type: DataTypes.INTEGER, defaultValue: 6 },
-  levelName: { type: DataTypes.STRING, defaultValue: 'Neighborhood Hero' },
-  avBg: { type: DataTypes.STRING, defaultValue: '#1E8A4F' },
-  initial: { type: DataTypes.STRING, defaultValue: 'A' },
-  isYou: { type: DataTypes.BOOLEAN, defaultValue: false }
-});
-
-export const Issue = sequelize.define('Issue', {
-  customId: { type: DataTypes.STRING, primaryKey: true },
-  title: { type: DataTypes.STRING, allowNull: false },
-  cat: { type: DataTypes.STRING, allowNull: false },
-  status: { type: DataTypes.STRING, defaultValue: 'Reported' },
-  confirms: { type: DataTypes.INTEGER, defaultValue: 1 },
-  dist: { type: DataTypes.STRING, defaultValue: '0.1 km' },
-  when: { type: DataTypes.STRING, defaultValue: 'just now' },
-  by: { type: DataTypes.STRING, defaultValue: 'You' },
-  sev: { type: DataTypes.STRING, defaultValue: 'Medium' },
-  loc: { type: DataTypes.STRING, defaultValue: 'Lajpat Nagar' },
-  lat: { type: DataTypes.DOUBLE, allowNull: false },
-  lng: { type: DataTypes.DOUBLE, allowNull: false },
-  imageUrl: { type: DataTypes.STRING, allowNull: true }
-});
-
-export const Timeline = sequelize.define('Timeline', {
-  label: { type: DataTypes.STRING, allowNull: false },
-  who: { type: DataTypes.STRING, allowNull: false },
-  reach: { type: DataTypes.INTEGER, allowNull: false }
-});
-
-// Setup Associations
-Issue.hasMany(Timeline, { as: 'timeline', foreignKey: 'issueId', onDelete: 'CASCADE' });
-Timeline.belongsTo(Issue, { foreignKey: 'issueId' });
 
 // Seed default data
 export async function initDb() {
-  await sequelize.sync();
+  try {
+    const usersColl = db.collection('users');
+    const issuesColl = db.collection('issues');
 
-  const userCount = await User.count();
-  if (userCount === 0) {
-    // Seed Users
-    await User.bulkCreate([
-      { name: 'Priya Sharma', points: 2180, initial: 'P', avBg: '#C0603C' },
-      { name: 'Rohan Mehra', points: 1640, initial: 'R', avBg: '#357FD6' },
-      { name: 'Aarav Kapoor', points: 1240, initial: 'A', avBg: '#1E8A4F', isYou: true },
-      { name: 'Ananya Iyer', points: 1120, initial: 'A', avBg: '#A9801C' },
-      { name: 'Vikram Singh', points: 980, initial: 'V', avBg: '#5E8A2E' },
-      { name: 'Sandeep Sen', points: 870, initial: 'S', avBg: '#7A6BC0' },
-      { name: 'Meera Joshi', points: 750, initial: 'M', avBg: '#C0603C' },
-      { name: 'Kabir Verma', points: 620, initial: 'K', avBg: '#357FD6' },
-      { name: 'Diya Malhotra', points: 540, initial: 'D', avBg: '#A9801C' },
-      { name: 'Arjun Nair', points: 430, initial: 'A', avBg: '#5E8A2E' }
-    ]);
+    // Check if users collection is empty
+    const usersSnapshot = await usersColl.limit(1).get();
+  
+  if (usersSnapshot.empty) {
+    console.log('Seeding default users...');
+    const seedUsers = [
+      { id: 'priya_sharma', name: 'Priya Sharma', points: 2180, initial: 'P', avBg: '#C0603C', isYou: false },
+      { id: 'rohan_mehra', name: 'Rohan Mehra', points: 1640, initial: 'R', avBg: '#357FD6', isYou: false },
+      { id: 'aarav_kapoor', name: 'Aarav Kapoor', points: 1240, initial: 'A', avBg: '#1E8A4F', isYou: true, levelName: 'Neighborhood Hero', reports: 18, resolved: 7, streak: 6 },
+      { id: 'ananya_iyer', name: 'Ananya Iyer', points: 1120, initial: 'A', avBg: '#A9801C', isYou: false },
+      { id: 'vikram_singh', name: 'Vikram Singh', points: 980, initial: 'V', avBg: '#5E8A2E', isYou: false },
+      { id: 'sandeep_sen', name: 'Sandeep Sen', points: 870, initial: 'S', avBg: '#7A6BC0', isYou: false },
+      { id: 'meera_joshi', name: 'Meera Joshi', points: 750, initial: 'M', avBg: '#C0603C', isYou: false },
+      { id: 'kabir_verma', name: 'Kabir Verma', points: 620, initial: 'K', avBg: '#357FD6', isYou: false },
+      { id: 'diya_malhotra', name: 'Diya Malhotra', points: 540, initial: 'D', avBg: '#A9801C', isYou: false },
+      { id: 'arjun_nair', name: 'Arjun Nair', points: 430, initial: 'A', avBg: '#5E8A2E', isYou: false }
+    ];
 
-    // Seed Issues
+    for (const u of seedUsers) {
+      await usersColl.doc(u.id).set(u);
+    }
+  }
+
+  // Check if issues collection is empty
+  const issuesSnapshot = await issuesColl.limit(1).get();
+
+  if (issuesSnapshot.empty) {
+    console.log('Seeding default issues...');
     const initialIssues = [
       {
         customId: '#1042',
@@ -85,7 +52,8 @@ export async function initDb() {
         sev: 'High',
         loc: 'Ring Rd, Lajpat Nagar',
         lat: 28.5682,
-        lng: 77.2410
+        lng: 77.2410,
+        createdAt: new Date().toISOString()
       },
       {
         customId: '#1038',
@@ -99,7 +67,8 @@ export async function initDb() {
         sev: 'Medium',
         loc: 'Nehru Park',
         lat: 28.5823,
-        lng: 77.2185
+        lng: 77.2185,
+        createdAt: new Date().toISOString()
       },
       {
         customId: '#1031',
@@ -113,7 +82,8 @@ export async function initDb() {
         sev: 'High',
         loc: 'Aurobindo Marg',
         lat: 28.5620,
-        lng: 77.2105
+        lng: 77.2105,
+        createdAt: new Date().toISOString()
       },
       {
         customId: '#1019',
@@ -127,7 +97,8 @@ export async function initDb() {
         sev: 'Medium',
         loc: 'Lodhi Garden',
         lat: 28.5915,
-        lng: 77.2198
+        lng: 77.2198,
+        createdAt: new Date().toISOString()
       },
       {
         customId: '#1024',
@@ -141,7 +112,8 @@ export async function initDb() {
         sev: 'Low',
         loc: 'Sarojini Market',
         lat: 28.5772,
-        lng: 77.1979
+        lng: 77.1979,
+        createdAt: new Date().toISOString()
       },
       {
         customId: '#1011',
@@ -155,32 +127,35 @@ export async function initDb() {
         sev: 'Medium',
         loc: 'CR Park',
         lat: 28.5365,
-        lng: 77.2510
+        lng: 77.2510,
+        createdAt: new Date().toISOString()
       }
     ];
 
     for (const it of initialIssues) {
-      const issue = await Issue.create(it);
-      
-      // Seed default timelines
+      // Build embedded timeline
       const order = { 'Reported': 0, 'Verified': 1, 'In Progress': 2, 'Resolved': 3 };
-      const lvl = order[issue.status] !== undefined ? order[issue.status] : 0;
+      const lvl = order[it.status] !== undefined ? order[it.status] : 0;
       
       const timelineSteps = [
-        { label: 'Reported', who: `by ${issue.by} · ${issue.when}`, reach: 0, issueId: issue.customId },
-        { label: 'Community verifying', who: `${issue.confirms} neighbors confirmed`, reach: 0, issueId: issue.customId },
-        { label: 'Verified by city', who: 'Municipal Corporation of Delhi', reach: 1, issueId: issue.customId },
-        { label: 'Crew assigned', who: 'Field team dispatched', reach: 2, issueId: issue.customId },
-        { label: 'Resolved', who: 'Issue closed', reach: 3, issueId: issue.customId }
+        { label: 'Reported', who: `by ${it.by} · ${it.when}`, reach: 0 },
+        { label: 'Community verifying', who: `${it.confirms} neighbors confirmed`, reach: 0 },
+        { label: 'Verified by city', who: 'Municipal Corporation of Delhi', reach: 1 },
+        { label: 'Crew assigned', who: 'Field team dispatched', reach: 2 },
+        { label: 'Resolved', who: 'Issue closed', reach: 3 }
       ];
 
-      for (const t of timelineSteps) {
-        if (lvl >= t.reach) {
-          await Timeline.create(t);
-        }
-      }
+      it.timeline = timelineSteps.filter(t => lvl >= t.reach);
+
+      await issuesColl.doc(it.customId).set(it);
     }
   }
+  } catch (err) {
+    if (err.message && err.message.includes('Could not load the default credentials')) {
+      console.error('\n⚠️  [Firestore Error]: Could not load Google Cloud credentials.');
+      console.error('To run Firestore locally, please authenticate your local environment by running:');
+      console.error('   gcloud auth application-default login\n');
+    }
+    throw err;
+  }
 }
-
-export default sequelize;

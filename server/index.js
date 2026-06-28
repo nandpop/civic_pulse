@@ -7,8 +7,8 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import vision from '@google-cloud/vision';
 
-// Import db models
-import { initDb, User, Issue, Timeline } from './db.js';
+// Import db connection
+import { initDb, db } from './db.js';
 
 // Setup environment variables
 const __filename = fileURLToPath(import.meta.url);
@@ -67,8 +67,9 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS || (process.env.GCP_PROJECT_ID &&
 // Fetch current user details
 app.get('/api/users/me', async (req, res) => {
   try {
-    const user = await User.findOne({ where: { isYou: true } });
-    if (!user) return res.status(404).json({ error: 'Current user not found' });
+    const snapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+    if (snapshot.empty) return res.status(404).json({ error: 'Current user not found' });
+    const user = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -78,7 +79,8 @@ app.get('/api/users/me', async (req, res) => {
 // Fetch neighborhood leaderboard
 app.get('/api/users/leaderboard', async (req, res) => {
   try {
-    const users = await User.findAll({ order: [['points', 'DESC']] });
+    const snapshot = await db.collection('users').orderBy('points', 'desc').get();
+    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -89,11 +91,20 @@ app.get('/api/users/leaderboard', async (req, res) => {
 app.get('/api/issues', async (req, res) => {
   try {
     const { category, status } = req.query;
-    const where = {};
-    if (category && category !== 'All') where.cat = category;
-    if (status && status !== 'All') where.status = status;
+    let queryRef = db.collection('issues');
 
-    const issues = await Issue.findAll({ where, order: [['createdAt', 'DESC']] });
+    if (category && category !== 'All') {
+      queryRef = queryRef.where('cat', '==', category);
+    }
+    if (status && status !== 'All') {
+      queryRef = queryRef.where('status', '==', status);
+    }
+
+    const snapshot = await queryRef.get();
+    const issues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort in memory to avoid needing custom composite indexes in Firestore
+    issues.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
     res.json(issues);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -103,12 +114,9 @@ app.get('/api/issues', async (req, res) => {
 // Fetch individual issue details (with timeline)
 app.get('/api/issues/:id', async (req, res) => {
   try {
-    const issue = await Issue.findOne({
-      where: { customId: req.params.id },
-      include: [{ model: Timeline, as: 'timeline' }]
-    });
-    if (!issue) return res.status(404).json({ error: 'Issue not found' });
-    res.json(issue);
+    const doc = await db.collection('issues').doc(req.params.id).get();
+    if (!doc.exists) return res.status(404).json({ error: 'Issue not found' });
+    res.json({ id: doc.id, ...doc.data() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -117,10 +125,12 @@ app.get('/api/issues/:id', async (req, res) => {
 // Confirm an issue (Citizen App)
 app.post('/api/issues/:id/confirm', async (req, res) => {
   try {
-    const issue = await Issue.findOne({ where: { customId: req.params.id } });
-    if (!issue) return res.status(404).json({ error: 'Issue not found' });
+    const docRef = db.collection('issues').doc(req.params.id);
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Issue not found' });
 
-    const newConfirms = issue.confirms + 1;
+    const issue = doc.data();
+    const newConfirms = (issue.confirms || 0) + 1;
     let newStatus = issue.status;
 
     // Auto verify if confirms >= 4 and still reported
@@ -128,31 +138,40 @@ app.post('/api/issues/:id/confirm', async (req, res) => {
       newStatus = 'Verified';
     }
 
-    await issue.update({ confirms: newConfirms, status: newStatus });
+    // Update embedded timeline
+    let timeline = issue.timeline || [];
+    timeline = timeline.map(t => {
+      if (t.label === 'Community verifying') {
+        return { ...t, who: `${newConfirms} neighbors confirmed` };
+      }
+      return t;
+    });
 
-    // Update community verifying timeline event if it exists
-    await Timeline.update(
-      { who: `${newConfirms} neighbors confirmed` },
-      { where: { issueId: issue.customId, label: 'Community verifying' } }
-    );
-
-    // If verified by city timeline doesn't exist but status became Verified, insert it
     if (newStatus === 'Verified') {
-      const exists = await Timeline.findOne({ where: { issueId: issue.customId, label: 'Verified by city' } });
+      const exists = timeline.some(t => t.label === 'Verified by city');
       if (!exists) {
-        await Timeline.create({
+        timeline.push({
           label: 'Verified by city',
           who: 'Municipal Corporation of Delhi',
-          reach: 1,
-          issueId: issue.customId
+          reach: 1
         });
       }
     }
 
+    await docRef.update({
+      confirms: newConfirms,
+      status: newStatus,
+      timeline
+    });
+
     // Award +10 points to current user
-    const user = await User.findOne({ where: { isYou: true } });
-    if (user) {
-      await user.update({ points: user.points + 10 });
+    const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+    if (!userSnapshot.empty) {
+      const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
+      const userData = userSnapshot.docs[0].data();
+      await userRef.update({
+        points: (userData.points || 0) + 10
+      });
     }
 
     res.json({ success: true, pointsAwarded: 10, confirms: newConfirms, status: newStatus });
@@ -165,36 +184,38 @@ app.post('/api/issues/:id/confirm', async (req, res) => {
 app.patch('/api/issues/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
-    const issue = await Issue.findOne({ where: { customId: req.params.id } });
-    if (!issue) return res.status(404).json({ error: 'Issue not found' });
+    const docRef = db.collection('issues').doc(req.params.id);
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Issue not found' });
 
-    await issue.update({ status });
+    const issue = doc.data();
 
-    // Regenerate timelines to match state
-    await Timeline.destroy({ where: { issueId: issue.customId } });
-
+    // Regenerate timeline to match state
     const order = { 'Reported': 0, 'Verified': 1, 'In Progress': 2, 'Resolved': 3 };
     const lvl = order[status] !== undefined ? order[status] : 0;
     
     const timelineSteps = [
-      { label: 'Reported', who: `by ${issue.by} · ${issue.when}`, reach: 0, issueId: issue.customId },
-      { label: 'Community verifying', who: `${issue.confirms} neighbors confirmed`, reach: 0, issueId: issue.customId },
-      { label: 'Verified by city', who: 'Municipal Corporation of Delhi', reach: 1, issueId: issue.customId },
-      { label: 'Crew assigned', who: 'Field team dispatched', reach: 2, issueId: issue.customId },
-      { label: 'Resolved', who: 'Issue closed', reach: 3, issueId: issue.customId }
+      { label: 'Reported', who: `by ${issue.by} · ${issue.when}`, reach: 0 },
+      { label: 'Community verifying', who: `${issue.confirms} neighbors confirmed`, reach: 0 },
+      { label: 'Verified by city', who: 'Municipal Corporation of Delhi', reach: 1 },
+      { label: 'Crew assigned', who: 'Field team dispatched', reach: 2 },
+      { label: 'Resolved', who: 'Issue closed', reach: 3 }
     ];
 
-    for (const t of timelineSteps) {
-      if (lvl >= t.reach) {
-        await Timeline.create(t);
-      }
-    }
+    const timeline = timelineSteps.filter(t => lvl >= t.reach);
+
+    await docRef.update({ status, timeline });
 
     // If status changed to Resolved, award user points for their reports if it's their issue
     if (status === 'Resolved' && issue.by === 'You') {
-      const user = await User.findOne({ where: { isYou: true } });
-      if (user) {
-        await user.update({ resolved: user.resolved + 1, points: user.points + 100 });
+      const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+      if (!userSnapshot.empty) {
+        const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
+        const userData = userSnapshot.docs[0].data();
+        await userRef.update({
+          resolved: (userData.resolved || 0) + 1,
+          points: (userData.points || 0) + 100
+        });
       }
     }
 
@@ -213,7 +234,12 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
 
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const issue = await Issue.create({
+    const timeline = [
+      { label: 'Reported', who: 'by You · just now', reach: 0 },
+      { label: 'Community verifying', who: '1 neighbors confirmed', reach: 0 }
+    ];
+
+    const newIssue = {
       customId,
       title: title || 'New reported issue',
       cat: cat || 'Pothole',
@@ -226,33 +252,25 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
       loc: loc || 'Lajpat Nagar',
       lat: parseFloat(lat) || 28.5682,
       lng: parseFloat(lng) || 77.2410,
-      imageUrl
-    });
+      imageUrl,
+      timeline,
+      createdAt: new Date().toISOString()
+    };
 
-    // Create default timelines
-    await Timeline.create({
-      label: 'Reported',
-      who: 'by You · just now',
-      reach: 0,
-      issueId: customId
-    });
-    await Timeline.create({
-      label: 'Community verifying',
-      who: '1 neighbors confirmed',
-      reach: 0,
-      issueId: customId
-    });
+    await db.collection('issues').doc(customId).set(newIssue);
 
     // Update user stats: +50 points, +1 reports
-    const user = await User.findOne({ where: { isYou: true } });
-    if (user) {
-      await user.update({
-        reports: user.reports + 1,
-        points: user.points + 50
+    const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+    if (!userSnapshot.empty) {
+      const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
+      const userData = userSnapshot.docs[0].data();
+      await userRef.update({
+        reports: (userData.reports || 0) + 1,
+        points: (userData.points || 0) + 50
       });
     }
 
-    res.status(201).json(issue);
+    res.status(201).json(newIssue);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
