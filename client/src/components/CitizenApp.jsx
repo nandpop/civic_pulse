@@ -22,7 +22,8 @@ import {
   Crown,
   HandPointing,
   Plus,
-  Buildings
+  Buildings,
+  Info
 } from '@phosphor-icons/react';
 
 import GoogleMapsContainer from './GoogleMapsContainer';
@@ -934,7 +935,12 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
           </div>
 
           {/* Confirmation Action Button */}
-          {!confirmedMap[selectedIssue.customId] ? (
+          {selectedIssue.by === 'You' ? (
+            <div style={{ width: '100%', marginTop: '13px', backgroundColor: '#F1EFE6', color: '#7C8479', borderRadius: '14px', padding: '14px', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(30,36,31,0.06)' }}>
+              <Info size={18} weight="fill" style={{ color: '#8A8678' }} />
+              You cannot upvote your own report
+            </div>
+          ) : !confirmedMap[selectedIssue.customId] ? (
             <button 
               onClick={handleConfirmIssue}
               style={{ width: '100%', marginTop: '13px', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 6px 16px -6px rgba(30,138,79,0.5)', outline: 'none' }}
@@ -1980,7 +1986,12 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
 
           {/* Action upvote button */}
           <div style={{ marginTop: '18px' }}>
-            {!confirmedMap[selectedIssue.customId] ? (
+            {selectedIssue.by === 'You' ? (
+              <div style={{ width: '100%', backgroundColor: '#F1EFE6', color: '#7C8479', borderRadius: '14px', padding: '14px', fontSize: '13.5px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(30,36,31,0.06)' }}>
+                <Info size={18} weight="fill" style={{ color: '#8A8678' }} />
+                You cannot upvote your own report
+              </div>
+            ) : !confirmedMap[selectedIssue.customId] ? (
               <button 
                 onClick={handleConfirmIssue}
                 style={{ width: '100%', backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '14px', padding: '14px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 6px 16px -6px rgba(30,138,79,0.4)', transition: 'background-color 0.15s', outline: 'none' }}
