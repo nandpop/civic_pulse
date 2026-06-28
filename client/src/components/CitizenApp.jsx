@@ -627,16 +627,18 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
               <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E241F', textAlign: 'center', marginBottom: '-4px' }}>Add issue photo to begin</div>
               
               <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                <button 
-                  onClick={() => cameraInputRef.current.click()}
-                  style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
-                >
-                  <Camera size={15} weight="fill" />
-                  Take Photo
-                </button>
+                {isMobileView && (
+                  <button 
+                    onClick={() => cameraInputRef.current.click()}
+                    style={{ flex: 1, backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
+                  >
+                    <Camera size={15} weight="fill" />
+                    Take Photo
+                  </button>
+                )}
                 <button 
                   onClick={() => galleryInputRef.current.click()}
-                  style={{ flex: 1, backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
+                  style={{ flex: isMobileView ? 1 : undefined, width: isMobileView ? undefined : '100%', backgroundColor: '#EAF4EC', color: '#176B3D', border: 'none', borderRadius: '12px', padding: '12px 8px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', outline: 'none' }}
                 >
                   Upload Photo
                 </button>
@@ -669,6 +671,21 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
                 <div style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: 'rgba(22,19,14,0.6)', color: '#fff', fontSize: '10px', fontFamily: "'Space Mono', monospace", padding: '4px 9px', borderRadius: '7px' }}>
                   {selectedFile.name.substring(0, 20)}
                 </div>
+                <button
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setPreviewImageUrl('');
+                    setAiDone(false);
+                    setAiThinking(false);
+                    setDraftCategory('');
+                    setDraftTitle('');
+                    setDraftSev('Medium');
+                  }}
+                  style={{ position: 'absolute', top: '12px', right: '12px', backgroundColor: 'rgba(22,19,14,0.65)', color: '#fff', border: 'none', borderRadius: '9px', padding: '6px 11px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', outline: 'none', backdropFilter: 'blur(4px)' }}
+                >
+                  <ArrowLeft size={13} weight="bold" />
+                  Change Photo
+                </button>
               </div>
 
               {aiThinking && (
