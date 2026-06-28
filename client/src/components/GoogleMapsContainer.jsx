@@ -95,6 +95,10 @@ function LeafletMap({
 
     // Render issues
     issues.forEach(issue => {
+      if (!issue || issue.lat === undefined || issue.lng === undefined || issue.lat === null || issue.lng === null || isNaN(Number(issue.lat)) || isNaN(Number(issue.lng))) {
+        console.warn('Skipping issue with invalid coordinates:', issue);
+        return;
+      }
       const colors = {
         'Pothole': '#C0603C',
         'Streetlight': '#A9801C',
@@ -105,7 +109,7 @@ function LeafletMap({
       };
       const color = colors[issue.cat] || '#7A6BC0';
 
-      const marker = L.circleMarker([issue.lat, issue.lng], {
+      const marker = L.circleMarker([Number(issue.lat), Number(issue.lng)], {
         radius: 8,
         fillColor: color,
         color: '#FFFFFF',
@@ -126,8 +130,8 @@ function LeafletMap({
     });
 
     // Render temp placement pin
-    if (selectedLocation) {
-      const activePin = L.circleMarker([selectedLocation.lat, selectedLocation.lng], {
+    if (selectedLocation && selectedLocation.lat !== undefined && selectedLocation.lng !== undefined && selectedLocation.lat !== null && selectedLocation.lng !== null && !isNaN(Number(selectedLocation.lat)) && !isNaN(Number(selectedLocation.lng))) {
+      const activePin = L.circleMarker([Number(selectedLocation.lat), Number(selectedLocation.lng)], {
         radius: 10,
         fillColor: '#1E8A4F',
         color: '#FFFFFF',
@@ -137,7 +141,7 @@ function LeafletMap({
       }).addTo(map);
 
       markersRef.current.push(activePin);
-      map.panTo([selectedLocation.lat, selectedLocation.lng]);
+      map.panTo([Number(selectedLocation.lat), Number(selectedLocation.lng)]);
     }
   }, [issues, selectedLocation]);
 
@@ -256,10 +260,10 @@ function GoogleMapImpl({
       onUnmount={onUnmount}
       onClick={handleMapClick}
     >
-      {issues.map((issue) => (
+      {issues.filter(issue => issue && issue.lat !== undefined && issue.lng !== undefined && issue.lat !== null && issue.lng !== null && !isNaN(Number(issue.lat)) && !isNaN(Number(issue.lng))).map((issue) => (
         <MarkerF
           key={issue.customId}
-          position={{ lat: issue.lat, lng: issue.lng }}
+          position={{ lat: Number(issue.lat), lng: Number(issue.lng) }}
           icon={getMarkerIcon(issue.cat)}
           onClick={() => handleMarkerClick(issue.customId)}
         />

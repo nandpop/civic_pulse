@@ -7,10 +7,8 @@ export default function App() {
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px 20px 64px',
-      background: 'radial-gradient(circle at 1px 1px, rgba(30,36,31,.045) 1px, transparent 0) 0 0/24px 24px, #EEECE3'
+      width: '100%',
+      backgroundColor: '#F6F4ED'
     }}>
       <CitizenApp />
     </div>
