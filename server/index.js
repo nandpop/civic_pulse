@@ -229,8 +229,20 @@ app.patch('/api/issues/:id/status', async (req, res) => {
 app.post('/api/issues', upload.single('image'), async (req, res) => {
   try {
     const { title, cat, sev, loc, lat, lng, guardrailStatus } = req.body;
-    const n = Math.floor(1043 + Math.random() * 9000);
-    const customId = '#' + n;
+    
+    // Incrementally calculate the next custom ID starting from #1044
+    const issuesSnapshot = await db.collection('issues').get();
+    let maxId = 1043;
+    issuesSnapshot.forEach(doc => {
+      const idStr = doc.id || '';
+      if (idStr.startsWith('#')) {
+        const num = parseInt(idStr.substring(1), 10);
+        if (!isNaN(num) && num > maxId) {
+          maxId = num;
+        }
+      }
+    });
+    const customId = '#' + (maxId + 1);
 
     let imageUrl = null;
     if (req.file) {
@@ -268,6 +280,10 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
     const createdDate = new Date();
     const dueTime = new Date(createdDate.getTime() + sla * 60 * 60 * 1000).toISOString();
 
+    // Fetch user details first to get the reporter's name and update stats
+    const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+    const userName = !userSnapshot.empty ? userSnapshot.docs[0].data().name : 'Aarav Kapoor';
+
     const newIssue = {
       customId,
       title: title || 'New reported issue',
@@ -275,8 +291,8 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
       status: 'Reported',
       confirms: 1,
       dist: '0.1 km',
-      when: 'just now',
-      by: 'You',
+      when: createdDate.toISOString(),
+      by: userName,
       sev: sev || 'Medium',
       loc: loc || 'Lajpat Nagar',
       lat: parseFloat(lat) || 28.5682,
@@ -295,7 +311,6 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
     await db.collection('issues').doc(customId).set(newIssue);
 
     // Update user stats: +50 points, +1 reports
-    const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
     if (!userSnapshot.empty) {
       const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
       const userData = userSnapshot.docs[0].data();

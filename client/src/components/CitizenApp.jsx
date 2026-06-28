@@ -44,6 +44,34 @@ const S = {
   'Resolved': { fg: '#566056', bg: '#ECEAE1' }
 };
 
+const formatIssueTime = (issue) => {
+  if (!issue) return '';
+  const val = issue.when || 'just now';
+  const isTimestamp = val && val.includes('T') && val.length > 10;
+  if (isTimestamp || issue.createdAt) {
+    const date = new Date(issue.createdAt || val);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  }
+  return val;
+};
+
+const getReporterName = (issue, currentUserName) => {
+  if (!issue) return '';
+  if (issue.by === 'You' || issue.by === 'you' || (currentUserName && issue.by === currentUserName)) {
+    return 'You';
+  }
+  return issue.by;
+};
+
 export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }) {
   // Navigation & Data States
   const [screen, setScreen] = useState('home'); // 'home', 'report', 'detail', 'profile'
@@ -212,7 +240,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
     const lvl = order[issue.status] !== undefined ? order[issue.status] : 0;
 
     const timelineSteps = [
-      { label: 'Reported', who: `by ${issue.by} · ${issue.when}`, reach: 0 },
+      { label: 'Reported', who: `by ${getReporterName(issue, user?.name)} · ${formatIssueTime(issue)}`, reach: 0 },
       { label: 'Community verifying', who: `${issue.confirms} neighbors confirmed`, reach: 0 },
       { label: 'Verified by city', who: 'Municipal Corporation of Delhi', reach: 1 },
       { label: 'Crew assigned', who: 'Field team dispatched', reach: 2 },
@@ -562,7 +590,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                   <span style={{ color: '#CFCDC2' }}>·</span>
                   <span>{issue.dist}</span>
                   <span style={{ color: '#CFCDC2' }}>·</span>
-                  <span>{issue.when}</span>
+                  <span>{formatIssueTime(issue)}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '9px' }}>
                   <span style={pillStyle(issue.status)}>{issue.status}</span>
@@ -956,7 +984,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '18px', fontWeight: 800, lineHeight: 1.2, color: '#1E241F' }}>{selectedIssue.title}</div>
               <div style={{ fontSize: '12px', color: '#7C8479', fontWeight: 600, marginTop: '3px' }}>
-                {selectedIssue.customId} · reported by {selectedIssue.by} · {selectedIssue.when}
+                {selectedIssue.customId} · reported by {getReporterName(selectedIssue, user?.name)} · {formatIssueTime(selectedIssue)}
               </div>
             </div>
           </div>
@@ -1086,7 +1114,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                       <span style={{ color: '#CFCDC2' }}>·</span>
                       <span>{issue.loc}</span>
                       <span style={{ color: '#CFCDC2' }}>·</span>
-                      <span>{issue.when}</span>
+                      <span>{formatIssueTime(issue)}</span>
                     </div>
                   </div>
                 </div>
@@ -1599,7 +1627,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
                     <span style={{ color: '#CFCDC2' }}>·</span>
                     <span>{issue.loc}</span>
                     <span style={{ color: '#CFCDC2' }}>·</span>
-                    <span>{issue.when}</span>
+                    <span>{formatIssueTime(issue)}</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
@@ -2049,7 +2077,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             <div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E241F', margin: 0 }}>{selectedIssue.title}</h3>
               <div style={{ fontSize: '12px', color: '#7C8479', fontWeight: 600, marginTop: '4px' }}>
-                ID: {selectedIssue.customId} · Reported by {selectedIssue.by} · {selectedIssue.when}
+                ID: {selectedIssue.customId} · Reported by {getReporterName(selectedIssue, user?.name)} · {formatIssueTime(selectedIssue)}
               </div>
             </div>
           </div>
