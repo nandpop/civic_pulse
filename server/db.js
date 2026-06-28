@@ -63,7 +63,12 @@ export async function initDb() {
       { name: 'Rohan Mehra', points: 1640, initial: 'R', avBg: '#357FD6' },
       { name: 'Aarav Kapoor', points: 1240, initial: 'A', avBg: '#1E8A4F', isYou: true },
       { name: 'Ananya Iyer', points: 1120, initial: 'A', avBg: '#A9801C' },
-      { name: 'Vikram Singh', points: 980, initial: 'V', avBg: '#5E8A2E' }
+      { name: 'Vikram Singh', points: 980, initial: 'V', avBg: '#5E8A2E' },
+      { name: 'Sandeep Sen', points: 870, initial: 'S', avBg: '#7A6BC0' },
+      { name: 'Meera Joshi', points: 750, initial: 'M', avBg: '#C0603C' },
+      { name: 'Kabir Verma', points: 620, initial: 'K', avBg: '#357FD6' },
+      { name: 'Diya Malhotra', points: 540, initial: 'D', avBg: '#A9801C' },
+      { name: 'Arjun Nair', points: 430, initial: 'A', avBg: '#5E8A2E' }
     ]);
 
     // Seed Issues

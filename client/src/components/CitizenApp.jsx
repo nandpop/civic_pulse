@@ -464,7 +464,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
           </div>
         </div>
         <button 
-          onClick={() => setScreen('profile')} 
+          onClick={() => setScreen('awards')} 
           style={{ display: 'flex', alignItems: 'center', gap: '7px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', padding: '6px 11px 6px 7px', borderRadius: '999px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(28,33,24,0.05)', outline: 'none' }}
         >
           <span style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#1E8A4F', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>
@@ -1111,6 +1111,18 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
         </div>
       </div>
 
+      {/* Counts boxes */}
+      <div style={{ display: 'flex', gap: '9px', marginBottom: '14px' }}>
+        <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '14px', padding: '13px', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800 }}>{user.reports}</div>
+          <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>reports</div>
+        </div>
+        <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '14px', padding: '13px', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#1E8A4F' }}>{user.resolved}</div>
+          <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>resolved</div>
+        </div>
+      </div>
+
       {/* Streak Tracker */}
       <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '15px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -1229,165 +1241,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
     </div>
   );
 
-  const renderProfileContent = () => (
-    <div style={{ padding: '8px 18px 120px', textAlign: 'left' }}>
-      
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 16px' }}>
-        <div style={{ fontSize: '17px', fontWeight: 800 }}>Your impact</div>
-        {isMobileView && (
-          <button 
-            onClick={() => setScreen('home')}
-            style={{ width: '36px', height: '36px', borderRadius: '11px', backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
-          >
-            <House size={18} />
-          </button>
-        )}
-      </div>
 
-      {/* Impact Stats Card */}
-      <div style={{ background: 'linear-gradient(150deg,#1E8A4F,#15673A)', borderRadius: '20px', padding: '18px', color: '#fff', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', right: '-30px', top: '-30px', width: '130px', height: '130px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '50px', height: '50px', borderRadius: '16px', backgroundColor: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justify: 'center', fontSize: '20px', fontWeight: 800 }}>
-            {user.name[0]}
-          </div>
-          <div>
-            <div style={{ fontSize: '17px', fontWeight: 800 }}>{user.name}</div>
-            <div style={{ fontSize: '12px', opacity: 0.85, display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Medal size={13} weight="fill" />
-              {user.levelName}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginTop: '16px' }}>
-          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '34px', fontWeight: 700, lineHeight: 1 }}>{user.points}</div>
-          <div style={{ fontSize: '12px', opacity: 0.85, marginBottom: '5px' }}>Pulse points</div>
-        </div>
-        <div style={{ height: '7px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '999px', marginTop: '12px', overflow: 'hidden' }}>
-          <div 
-            style={{
-              height: '100%',
-              backgroundColor: '#fff',
-              borderRadius: '999px',
-              transition: 'width .3s ease',
-              width: `${Math.min(100, (user.points / 2500) * 100)}%`
-            }}
-          />
-        </div>
-        <div style={{ fontSize: '11px', opacity: 0.85, marginTop: '6px' }}>
-          {2500 - user.points > 0 ? `${2500 - user.points} pts to City Champion` : 'Ready for next promotion'}
-        </div>
-      </div>
-
-      {/* Counts boxes */}
-      <div style={{ display: 'flex', gap: '9px', marginTop: '13px' }}>
-        <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '14px', padding: '13px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontSize: '18px', fontWeight: 800, color: '#E8943A' }}>
-            <Fire weight="fill" />
-            {user.streak}
-          </div>
-          <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>day streak</div>
-        </div>
-        <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '14px', padding: '13px', textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 800 }}>{user.reports}</div>
-          <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>reports</div>
-        </div>
-        <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '14px', padding: '13px', textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#1E8A4F' }}>{user.resolved}</div>
-          <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>resolved</div>
-        </div>
-      </div>
-
-      {/* Badges Grid */}
-      <div style={{ fontSize: '14px', fontWeight: 800, margin: '20px 2px 11px' }}>Badges</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-        {[
-          { name: 'First Report', icon: Flag, earned: true },
-          { name: 'Eagle Eye', icon: Eye, earned: true },
-          { name: '7-Day Streak', icon: Fire, earned: true },
-          { name: 'Verified x10', icon: ShieldCheck, earned: true },
-          { name: 'Resolver', icon: Wrench, earned: false },
-          { name: 'Top 10%', icon: Crown, earned: false }
-        ].map((b, i) => {
-          const Icon = b.icon;
-          return (
-            <div 
-              key={i}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '14px 6px',
-                borderRadius: '15px',
-                backgroundColor: b.earned ? '#fff' : '#F1EFE6',
-                border: '1px solid rgba(30,36,31,.07)',
-                opacity: b.earned ? 1 : 0.55
-              }}
-            >
-              <div 
-                style={{
-                  width: '46px',
-                  height: '46px',
-                  borderRadius: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: b.earned ? '#fff' : '#A7AC9F',
-                  backgroundColor: b.earned ? '#1E8A4F' : '#E2E0D6'
-                }}
-              >
-                <Icon size={22} weight={b.earned ? "fill" : "regular"} />
-              </div>
-              <div style={{ fontSize: '11px', fontWeight: 700, textAlign: 'center', lineHeight: 1.15, color: '#41624C' }}>{b.name}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Leaderboard list */}
-      <div style={{ fontSize: '14px', fontWeight: 800, margin: '20px 2px 11px' }}>Neighborhood leaderboard</div>
-      <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', overflow: 'hidden', marginBottom: '30px' }}>
-        {leaderboard.map((player, idx) => (
-          <div 
-            key={player?.id || idx} 
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '11px',
-              padding: '11px 13px',
-              borderBottom: idx < leaderboard.length - 1 ? '1px solid rgba(30,36,31,0.05)' : 'none',
-              backgroundColor: player?.isYou ? '#EAF4EC' : 'transparent'
-            }}
-          >
-            <div style={rankStyle(idx)}>
-              {idx + 1}
-            </div>
-            <div 
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '13px',
-                fontWeight: 800,
-                backgroundColor: player?.avBg || '#1E8A4F'
-              }}
-            >
-              {player?.initial || 'A'}
-            </div>
-            <div style={{ flex: 1, fontSize: '13.5px', fontWeight: 700, color: '#1E241F' }}>{player?.name || 'Player'} {player?.isYou && '(You)'}</div>
-            <div style={{ fontFamily: "'Space Mono', monospace", fontSize: '13px', fontWeight: 700, color: '#41624C' }}>{player?.points || 0}</div>
-          </div>
-        ))}
-      </div>
-
-    </div>
-  );
 
   const renderLeaderboardContent = () => (
     <div style={{ padding: isMobileView ? '8px 18px 120px' : '0', textAlign: 'left' }}>
@@ -2200,6 +2054,18 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
           </div>
         </div>
 
+        {/* Counts boxes */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '14px' }}>
+          <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+            <div style={{ fontSize: '20px', fontWeight: 800 }}>{user.reports}</div>
+            <div style={{ fontSize: '12px', color: '#7C8479', fontWeight: 600, marginTop: '4px' }}>reports submitted</div>
+          </div>
+          <div style={{ flex: 1, backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '16px', padding: '16px', textAlign: 'center', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: '#1E8A4F' }}>{user.resolved}</div>
+            <div style={{ fontSize: '12px', color: '#7C8479', fontWeight: 600, marginTop: '4px' }}>issues resolved</div>
+          </div>
+        </div>
+
         {/* Streak Tracker */}
         <div style={{ backgroundColor: '#fff', border: '1px solid rgba(30,36,31,0.07)', borderRadius: '18px', padding: '18px', boxShadow: '0 2px 10px rgba(28,33,24,0.02)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', marginBottom: '14px' }}>
@@ -2326,7 +2192,6 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
         {screen === 'detail' && renderDetailContent()}
         {screen === 'track' && renderTrackContent()}
         {screen === 'awards' && renderAwardsContent()}
-        {screen === 'profile' && renderProfileContent()}
         {screen === 'leaderboard' && renderLeaderboardContent()}
         {screen === 'map' && renderMapContent()}
       </div>
@@ -2413,7 +2278,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag }) {
 
         {/* User Card */}
         <button 
-          onClick={() => setScreen('profile')}
+          onClick={() => setScreen('awards')}
           style={{
             margin: '20px',
             padding: '16px',
