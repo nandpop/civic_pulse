@@ -72,6 +72,19 @@ const getReporterName = (issue, currentUserName) => {
   return issue.by;
 };
 
+const getDistanceKm = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
 const isVideoUrl = (url) => {
   if (!url) return false;
   return url.toLowerCase().includes('.mp4') || 
@@ -103,6 +116,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
   });
   const [leaderboard, setLeaderboard] = useState([]);
   const [confirmedMap, setConfirmedMap] = useState({});
+  const [swipedIssues, setSwipedIssues] = useState({});
   const [toast, setToast] = useState('');
   const [selectedBadge, setSelectedBadge] = useState(null);
 
@@ -126,6 +140,19 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
     fetchIssues();
     fetchUser();
     fetchLeaderboard();
+
+    // Fetch initial user geolocation on load if possible
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setSelectedCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (err) => console.log("Init geolocation error:", err)
+      );
+    }
   }, [homeFilter, refreshFlag]);
 
   // Direct navigate-to-detail function (avoids useEffect race condition)
@@ -416,10 +443,14 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
       });
       const newIssue = await res.json();
       
-      showToast('Report submitted! +50 Pulse Points');
+      if (newIssue.merged) {
+        showToast('Similar report found! Merged into high-priority Mega-Ticket. +50 Points');
+      } else {
+        showToast('Report submitted! +50 Pulse Points');
+      }
       fetchIssues();
       fetchUser();
-      openDetail(newIssue.customId);
+      openDetail(newIssue.customId || newIssue.id);
       
       // Reset form
       setReportStep(1);
@@ -1053,6 +1084,18 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               </div>
             </div>
           </div>
+
+          {selectedIssue.mergedReports && selectedIssue.mergedReports.length > 0 && (
+            <div style={{ backgroundColor: '#FDF3E7', border: '1px solid rgba(232,148,58,0.2)', borderRadius: '15px', padding: '14px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#B26F22', fontSize: '12.5px', fontWeight: 800 }}>
+                <Sparkle size={16} weight="fill" />
+                MEGA-TICKET (Grouped {selectedIssue.mergedReports.length + 1} Reports)
+              </div>
+              <div style={{ fontSize: '12px', color: '#8F5B1E', marginTop: '6px', lineHeight: 1.4 }}>
+                This is a high-priority neighborhood issue. Nearby reports from <b>{selectedIssue.mergedReports.map(r => r.by).join(', ')}</b> have been merged here automatically.
+              </div>
+            </div>
+          )}
 
 
 
@@ -2146,6 +2189,18 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             <span>{selectedIssue.loc}</span>
           </div>
 
+          {selectedIssue.mergedReports && selectedIssue.mergedReports.length > 0 && (
+            <div style={{ backgroundColor: '#FDF3E7', border: '1px solid rgba(232,148,58,0.2)', borderRadius: '15px', padding: '14px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#B26F22', fontSize: '13px', fontWeight: 800 }}>
+                <Sparkle size={16} weight="fill" />
+                MEGA-TICKET (Grouped {selectedIssue.mergedReports.length + 1} Reports)
+              </div>
+              <div style={{ fontSize: '12.5px', color: '#8F5B1E', marginTop: '6px', lineHeight: 1.4 }}>
+                This is a high-priority neighborhood issue. Nearby reports from <b>{selectedIssue.mergedReports.map(r => r.by).join(', ')}</b> have been merged here automatically.
+              </div>
+            </div>
+          )}
+
           {/* Action upvote button */}
           {selectedIssue.status !== 'In Progress' && selectedIssue.status !== 'Resolved' && (
             <div style={{ marginTop: '18px' }}>
@@ -2359,6 +2414,147 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
     </div>
   );
 
+  const handleVerifySwipe = async (issueId, action) => {
+    try {
+      const endpoint = action === 'verify' ? 'confirm' : 'reject';
+      const method = 'POST';
+      const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/${endpoint}`, {
+        method
+      });
+      const data = await res.json();
+      
+      setSwipedIssues(prev => ({ ...prev, [issueId]: action }));
+      if (action === 'verify') {
+        setConfirmedMap(prev => ({ ...prev, [issueId]: true }));
+      }
+      
+      showToast(action === 'verify' ? 'Thanks for verifying! +10 Points' : 'Report flagged as Fake/Fixed! +10 Points');
+      fetchUser();
+      fetchIssues();
+      if (triggerRefresh) triggerRefresh();
+    } catch (err) {
+      console.error(err);
+      showToast('Error voting on issue.');
+    }
+  };
+
+  const renderVerifyContent = () => {
+    const userLat = selectedCoords?.lat || 28.5682;
+    const userLng = selectedCoords?.lng || 77.2410;
+
+    const unverifiedIssues = issues.filter(issue => {
+      if (issue.status !== 'Reported') return false;
+      if (issue.guardrailStatus === 'Flagged') return false;
+      
+      const isOwnReport = getReporterName(issue, user?.name) === 'You';
+      if (isOwnReport) return false;
+      
+      if (confirmedMap[issue.customId] || swipedIssues[issue.customId]) return false;
+      
+      const distance = getDistanceKm(userLat, userLng, issue.lat, issue.lng);
+      return distance <= 1.0;
+    });
+
+    const sortedIssues = [...unverifiedIssues].sort((a, b) => {
+      const distA = getDistanceKm(userLat, userLng, a.lat, a.lng);
+      const distB = getDistanceKm(userLat, userLng, b.lat, b.lng);
+      return distA - distB;
+    });
+
+    const activeIssue = sortedIssues[0];
+
+    if (!activeIssue) {
+      return (
+        <div style={{ padding: '40px 20px 110px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px', textAlign: 'center' }}>
+          <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#E9F4EC', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', animation: 'cpPulse 2s infinite' }}>
+            <ShieldCheck size={42} weight="fill" style={{ color: '#1E8A4F' }} />
+          </div>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1E241F', marginBottom: '8px' }}>You're All Caught Up!</h2>
+          <p style={{ fontSize: '13.5px', color: '#5B655B', lineHeight: 1.4, maxWidth: '320px', marginBottom: '24px' }}>
+            No unverified reports left within 1 km of your location. Awesome job keeping your neighborhood verified!
+          </p>
+          <button 
+            onClick={() => setScreen('home')}
+            style={{ backgroundColor: '#1E8A4F', color: '#fff', border: 'none', borderRadius: '12px', padding: '12px 24px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', outline: 'none' }}
+          >
+            Back to Home Feed
+          </button>
+        </div>
+      );
+    }
+
+    const distance = getDistanceKm(userLat, userLng, activeIssue.lat, activeIssue.lng);
+
+    return (
+      <div style={{ padding: '8px 18px 110px', textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ 
+          width: '100%', 
+          maxWidth: '360px', 
+          backgroundColor: '#fff', 
+          borderRadius: '24px', 
+          border: '1px solid rgba(30,36,31,0.08)', 
+          boxShadow: '0 10px 30px rgba(28,33,24,0.06)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          marginTop: '10px'
+        }}>
+          <div style={{ position: 'relative', height: '260px', backgroundColor: '#E4E1D6', overflow: 'hidden' }}>
+            {activeIssue.imageUrl ? (
+              isVideoUrl(activeIssue.imageUrl) ? (
+                <video src={activeIssue.imageUrl} controls style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <img src={activeIssue.imageUrl} alt={activeIssue.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7C8479', fontWeight: 700 }}>[ NO IMAGE ]</div>
+            )}
+            
+            <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px', zIndex: 10 }}>
+              <span style={{ backgroundColor: 'rgba(22,19,14,0.85)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '7px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <MapPin size={12} weight="fill" style={{ color: '#E8943A' }} />
+                {distance.toFixed(2)} km away
+              </span>
+              <span style={{ backgroundColor: '#1E8A4F', color: '#fff', fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: '7px' }}>
+                {activeIssue.cat}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1E241F', margin: 0 }}>{activeIssue.title}</h3>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#5B655B', fontSize: '13px' }}>
+              <MapPin size={16} />
+              <span>{activeIssue.loc}</span>
+            </div>
+
+            <div style={{ backgroundColor: '#F6F4ED', borderRadius: '12px', padding: '10px 14px', fontSize: '11.5px', color: '#41624C', lineHeight: 1.4, marginTop: '4px' }}>
+              Moderating this issue gives you **+10 Pulse Points**. Swipe right if this report is correct, or swipe left if it is fake or fixed.
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', borderTop: '1px solid rgba(30,36,31,0.06)', height: '68px' }}>
+            <button 
+              onClick={() => handleVerifySwipe(activeIssue.customId, 'reject')}
+              style={{ flex: 1, border: 'none', background: 'none', borderRight: '1px solid rgba(30,36,31,0.06)', color: '#C0603C', fontSize: '14.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', outline: 'none' }}
+            >
+              <span style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#F6E7DF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800 }}>✕</span>
+              Fake / Fixed
+            </button>
+            <button 
+              onClick={() => handleVerifySwipe(activeIssue.customId, 'verify')}
+              style={{ flex: 1, border: 'none', background: 'none', color: '#1E8A4F', fontSize: '14.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', outline: 'none' }}
+            >
+              <span style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#EAF4EC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800 }}>✓</span>
+              Verify Real
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ----------------- DYNAMIC VIEW RENDER SELECTION -----------------
 
   const renderMobileView = () => (
@@ -2380,6 +2576,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
         {screen === 'awards' && renderAwardsContent()}
         {screen === 'leaderboard' && renderLeaderboardContent()}
         {screen === 'map' && renderMapContent()}
+        {screen === 'verify' && renderVerifyContent()}
       </div>
 
       {/* Tab Navigation Bar */}
@@ -2413,19 +2610,19 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </button>
 
           <button 
+            onClick={() => setScreen('verify')}
+            style={navBtnStyle(screen === 'verify')}
+          >
+            <ShieldCheck size={22} weight={screen === 'verify' ? 'fill' : 'regular'} />
+            <span style={{ fontSize: '10px', fontWeight: 700 }}>Verify</span>
+          </button>
+
+          <button 
             onClick={() => setScreen('awards')}
             style={navBtnStyle(screen === 'awards' || screen === 'leaderboard')}
           >
             <Trophy size={22} weight={(screen === 'awards' || screen === 'leaderboard') ? 'fill' : 'regular'} />
             <span style={{ fontSize: '10px', fontWeight: 700 }}>Awards</span>
-          </button>
-
-          <button 
-            onClick={() => setScreen('map')}
-            style={navBtnStyle(screen === 'map')}
-          >
-            <MapPin size={22} weight={screen === 'map' ? 'fill' : 'regular'} />
-            <span style={{ fontSize: '10px', fontWeight: 700 }}>Map</span>
           </button>
         </div>
       )}
@@ -2531,11 +2728,11 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
           </button>
 
           <button 
-            onClick={() => setScreen('map')} 
-            style={navItemStyle(screen === 'map')}
+            onClick={() => setScreen('verify')} 
+            style={navItemStyle(screen === 'verify')}
           >
-            <MapPin size={20} weight={screen === 'map' ? 'fill' : 'regular'} />
-            <span>Interactive Map</span>
+            <ShieldCheck size={20} weight={screen === 'verify' ? 'fill' : 'regular'} />
+            <span>Verify Issues</span>
           </button>
         </div>
 
@@ -2636,7 +2833,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               {screen === 'awards' && "Awards & Badges"}
               {screen === 'profile' && "Your Impact & Profile"}
               {screen === 'leaderboard' && "Neighborhood Leaderboard"}
-              {screen === 'map' && "Interactive GIS Map"}
+              {screen === 'verify' && "Verify Issues (Tinder for Potholes)"}
             </h2>
             <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>
               {screen === 'home' && "Explore reported issues and upvote local problems near Lajpat Nagar"}
@@ -2646,7 +2843,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               {screen === 'awards' && "Check level progression, streaks, and locked/earned badges"}
               {screen === 'profile' && "A summary of your points, streak, and reported/resolved issues"}
               {screen === 'leaderboard' && "See the top neighborhood contributors and their standing"}
-              {screen === 'map' && "Live visualization of local issues and nearby reported problems"}
+              {screen === 'verify' && "Swipe right to verify nearby reports are real, or left if they are fake/fixed"}
             </div>
           </div>
         </div>
@@ -2666,6 +2863,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
             {screen === 'profile' && renderProfileContent()}
             {screen === 'leaderboard' && renderLeaderboardContent()}
             {screen === 'map' && renderMapContent()}
+            {screen === 'verify' && renderVerifyContent()}
           </div>
         </div>
       </div>

@@ -193,6 +193,43 @@ app.post('/api/issues/:id/confirm', async (req, res) => {
   }
 });
 
+// Reject an issue (swipe left / fake or fixed)
+app.post('/api/issues/:id/reject', async (req, res) => {
+  try {
+    const docRef = db.collection('issues').doc(req.params.id);
+    const doc = await docRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Issue not found' });
+
+    const issue = doc.data();
+    const newRejects = (issue.rejects || 0) + 1;
+    let guardrailStatus = issue.guardrailStatus || 'Approved';
+
+    // Auto flag if rejects >= 3
+    if (newRejects >= 3) {
+      guardrailStatus = 'Flagged';
+    }
+
+    await docRef.update({
+      rejects: newRejects,
+      guardrailStatus
+    });
+
+    // Award +10 points to current user
+    const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+    if (!userSnapshot.empty) {
+      const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
+      const userData = userSnapshot.docs[0].data();
+      await userRef.update({
+        points: (userData.points || 0) + 10
+      });
+    }
+
+    res.json({ success: true, pointsAwarded: 10, rejects: newRejects, guardrailStatus });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin change status
 app.patch('/api/issues/:id/status', async (req, res) => {
   try {
@@ -278,6 +315,107 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
       });
 
       imageUrl = `https://storage.googleapis.com/${bucketName}/${gcsFileName}`;
+    }
+
+    const category = cat || 'Pothole';
+    const inputLat = parseFloat(lat) || 28.5682;
+    const inputLng = parseFloat(lng) || 77.2410;
+
+    // Smart Deduplication check: Active candidate within 100m proximity
+    const activeIssuesSnapshot = await db.collection('issues')
+      .where('cat', '==', category)
+      .where('status', '!=', 'Resolved')
+      .get();
+
+    let duplicateTarget = null;
+
+    for (const doc of activeIssuesSnapshot.docs) {
+      const activeIssue = doc.data();
+      const dist = getDistanceKm(inputLat, inputLng, activeIssue.lat, activeIssue.lng);
+      if (dist <= 0.1) { // 100m
+        // If image buffers are available, run Gemini comparison
+        if (aiClient && req.file && activeIssue.imageUrl) {
+          try {
+            const response = await aiClient.models.generateContent({
+              model: 'gemini-2.5-flash',
+              contents: [
+                `Compare these two civic issue reports. Determine if they describe the same physical problem (e.g. same pothole, same leaking pipe, same electrical issue).
+                Report A Title: "${title}"
+                Report B Title: "${activeIssue.title}"
+                
+                Respond in raw JSON format with:
+                {
+                  "isDuplicate": true or false,
+                  "reason": "brief explanation"
+                }
+                Do not include markdown tags. Only raw JSON.`,
+                {
+                  inlineData: {
+                    data: req.file.buffer.toString('base64'),
+                    mimeType: req.file.mimetype
+                  }
+                }
+              ]
+            });
+            const resultText = response.text.trim();
+            const cleanedJson = resultText.replace(/```json|```/g, '');
+            const parsed = JSON.parse(cleanedJson);
+            if (parsed.isDuplicate) {
+              duplicateTarget = doc.id;
+              break;
+            }
+          } catch (err) {
+            console.error('Gemini similarity check failed, falling back to proximity:', err.message);
+            duplicateTarget = doc.id;
+            break;
+          }
+        } else {
+          // Fallback proximity duplicate
+          duplicateTarget = doc.id;
+          break;
+        }
+      }
+    }
+
+    if (duplicateTarget) {
+      const docRef = db.collection('issues').doc(duplicateTarget);
+      const targetDoc = await docRef.get();
+      const targetData = targetDoc.data();
+      
+      const userSnapshot = await db.collection('users').where('isYou', '==', true).limit(1).get();
+      const userName = !userSnapshot.empty ? userSnapshot.docs[0].data().name : 'Aarav Kapoor';
+      
+      const mergedList = targetData.mergedReports || [];
+      mergedList.push({
+        by: userName,
+        title: title || 'Duplicate report',
+        lat: inputLat,
+        lng: inputLng,
+        when: new Date().toISOString()
+      });
+
+      const newConfirms = (targetData.confirms || 0) + 1;
+      let newSeverity = targetData.sev;
+      if (mergedList.length >= 2) {
+        newSeverity = 'High';
+      }
+
+      await docRef.update({
+        confirms: newConfirms,
+        mergedReports: mergedList,
+        sev: newSeverity
+      });
+
+      if (!userSnapshot.empty) {
+        const userRef = db.collection('users').doc(userSnapshot.docs[0].id);
+        const userData = userSnapshot.docs[0].data();
+        await userRef.update({
+          reports: (userData.reports || 0) + 1,
+          points: (userData.points || 0) + 50
+        });
+      }
+
+      return res.status(200).json({ ...targetData, id: duplicateTarget, confirms: newConfirms, mergedReports: mergedList, sev: newSeverity, merged: true });
     }
 
     const timeline = [

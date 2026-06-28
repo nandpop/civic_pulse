@@ -670,6 +670,30 @@ export default function Dashboard({ triggerRefresh, refreshFlag, onSwitchRole })
               </div>
             </div>
 
+            {selectedIssue.mergedReports && selectedIssue.mergedReports.length > 0 && (
+              <div style={{
+                backgroundColor: '#FDF3E7',
+                border: '1.5px solid #E8943A',
+                borderRadius: '14px',
+                padding: '12px 14px',
+                marginBottom: '16px'
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 800, color: '#B26F22', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  🔥 High Priority Mega-Ticket ({selectedIssue.mergedReports.length + 1} Grouped Reports)
+                </div>
+                <div style={{ fontSize: '11.5px', color: '#5B655B', marginTop: '4px', lineHeight: 1.35 }}>
+                  This ticket has consolidated duplicates from:
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '6px' }}>
+                    {selectedIssue.mergedReports.map((report, idx) => (
+                      <span key={idx} style={{ backgroundColor: 'rgba(232,148,58,0.1)', border: '1px solid rgba(232,148,58,0.2)', borderRadius: '6px', padding: '2px 6px', fontSize: '10px', fontWeight: 700, color: '#8F5B1E' }}>
+                        {report.by} ({new Date(report.when).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Images display: Before and After side-by-side */}
             <div style={{ marginBottom: '16px' }}>
               <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#41624C', marginBottom: '6px' }}>Verification Media</div>

@@ -42,6 +42,54 @@ export async function initDb() {
     console.log('Seeding default issues...');
     const initialIssues = [
       {
+        customId: '#1045',
+        title: 'Overflowing dustbin near market lane',
+        cat: 'Waste',
+        status: 'Reported',
+        confirms: 1,
+        dist: '0.3 km',
+        when: '1h ago',
+        by: 'Rohan Mehra',
+        sev: 'Medium',
+        loc: 'Lajpat Nagar II',
+        lat: 28.5695,
+        lng: 77.2435,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/garbage_overflow.jpg',
+        createdAt: new Date().toISOString()
+      },
+      {
+        customId: '#1046',
+        title: 'Damaged footpath tiles on main road',
+        cat: 'Other',
+        status: 'Reported',
+        confirms: 2,
+        dist: '0.2 km',
+        when: '3h ago',
+        by: 'Vikram Singh',
+        sev: 'Low',
+        loc: 'Lajpat Nagar Central Market',
+        lat: 28.5670,
+        lng: 77.2400,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/broken_footpath_tile.avif',
+        createdAt: new Date().toISOString()
+      },
+      {
+        customId: '#1047',
+        title: 'Blinking streetlight on street corner',
+        cat: 'Streetlight',
+        status: 'Reported',
+        confirms: 3,
+        dist: '0.8 km',
+        when: '4h ago',
+        by: 'Ananya Iyer',
+        sev: 'Medium',
+        loc: 'Defense Colony Flyover side',
+        lat: 28.5630,
+        lng: 77.2340,
+        imageUrl: 'https://storage.googleapis.com/civic-pulse-images-remgur-ai/streetlight_out.avif',
+        createdAt: new Date().toISOString()
+      },
+      {
         customId: '#1042',
         title: 'Deep pothole on Ring Road',
         cat: 'Pothole',
@@ -189,7 +237,7 @@ export async function initDb() {
       const sla = SLA_HOURS[it.cat] || SLA_HOURS['Other'];
 
       const createdDate = new Date();
-      const ageHoursMap = { '#1042': 2, '#1038': 5, '#1031': 24, '#1019': 4, '#1024': 72, '#1011': 48 };
+      const ageHoursMap = { '#1042': 2, '#1038': 5, '#1031': 24, '#1019': 4, '#1024': 72, '#1011': 48, '#1045': 1, '#1046': 3, '#1047': 4 };
       const ageHours = ageHoursMap[it.customId] || 0;
       createdDate.setHours(createdDate.getHours() - ageHours);
 
