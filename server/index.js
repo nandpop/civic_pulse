@@ -423,7 +423,6 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
       { label: 'Community verifying', who: '1 neighbors confirmed', reach: 0 }
     ];
 
-    const category = cat || 'Pothole';
     const dept = getDepartment(category, title);
     const sla = SLA_HOURS[category] || SLA_HOURS['Other'];
     

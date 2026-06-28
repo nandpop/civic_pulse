@@ -2833,7 +2833,7 @@ export default function CitizenApp({ triggerRefresh, refreshFlag, onSwitchRole }
               {screen === 'awards' && "Awards & Badges"}
               {screen === 'profile' && "Your Impact & Profile"}
               {screen === 'leaderboard' && "Neighborhood Leaderboard"}
-              {screen === 'verify' && "Verify Issues (Tinder for Potholes)"}
+              {screen === 'verify' && "Verify Issues"}
             </h2>
             <div style={{ fontSize: '11px', color: '#7C8479', fontWeight: 600, marginTop: '2px' }}>
               {screen === 'home' && "Explore reported issues and upvote local problems near Lajpat Nagar"}
