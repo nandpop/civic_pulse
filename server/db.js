@@ -154,13 +154,26 @@ export async function initDb() {
 
       it.timeline = timelineSteps.filter(t => lvl >= t.reach);
 
-      const DEPARTMENTS = {
-        'Pothole': 'MCD Road Works Dept',
-        'Streetlight': 'MCD Electrical Dept',
-        'Water': 'MCD Water & Sewerage Dept',
-        'Waste': 'MCD Sanitation Dept',
-        'Tree / Park': 'MCD Horticulture Dept',
-        'Other': 'MCD General Administration'
+      const getDepartment = (category, title) => {
+        const t = (title || '').toLowerCase();
+        const c = category || 'Other';
+        
+        if (c === 'Pothole' || t.includes('footpath') || t.includes('road') || t.includes('pavement') || t.includes('path') || t.includes('tile')) {
+          return 'MCD Road Works Dept';
+        }
+        if (c === 'Streetlight' || t.includes('light') || t.includes('lamp') || t.includes('electric')) {
+          return 'MCD Electrical Dept';
+        }
+        if (c === 'Water' || t.includes('leak') || t.includes('pipe') || t.includes('sewer')) {
+          return 'MCD Water & Sewerage Dept';
+        }
+        if (c === 'Waste' || t.includes('garbage') || t.includes('trash') || t.includes('overflow') || t.includes('waste') || t.includes('dump')) {
+          return 'PWD Sanitation Dept';
+        }
+        if (c === 'Tree / Park' || t.includes('tree') || t.includes('park') || t.includes('branch') || t.includes('horticulture')) {
+          return 'MCD Horticulture Dept';
+        }
+        return 'MCD General Administration';
       };
 
       const SLA_HOURS = {
@@ -172,7 +185,7 @@ export async function initDb() {
         'Other': 72
       };
 
-      const dept = DEPARTMENTS[it.cat] || DEPARTMENTS['Other'];
+      const dept = getDepartment(it.cat, it.title);
       const sla = SLA_HOURS[it.cat] || SLA_HOURS['Other'];
 
       const createdDate = new Date();
