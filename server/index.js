@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import vision from '@google-cloud/vision';
+import { GoogleGenAI } from '@google/genai';
 
 // Import db connection
 import { initDb, db } from './db.js';
@@ -30,25 +30,17 @@ const bucketName = 'civic-pulse-images-remgur-ai';
 // Multer memory storage config
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Initialize GCP Vision Client if credentials exist
-let visionClient = null;
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS || (process.env.GCP_PROJECT_ID && process.env.GCP_CLIENT_EMAIL && process.env.GCP_PRIVATE_KEY)) {
+// Initialize Google Gen AI (Gemini) Client if key exists
+let aiClient = null;
+if (process.env.GEMINI_API_KEY) {
   try {
-    const config = {};
-    if (process.env.GCP_PROJECT_ID) {
-      config.projectId = process.env.GCP_PROJECT_ID;
-      config.credentials = {
-        client_email: process.env.GCP_CLIENT_EMAIL,
-        private_key: process.env.GCP_PRIVATE_KEY.replace(/\\n/g, '\n')
-      };
-    }
-    visionClient = new vision.ImageAnnotatorClient(config);
-    console.log('Google Cloud Vision API Client initialized.');
+    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    console.log('Google Gemini LLM API Client initialized.');
   } catch (err) {
-    console.error('Failed to initialize Google Cloud Vision API:', err.message);
+    console.error('Failed to initialize Google Gemini Client:', err.message);
   }
 } else {
-  console.log('Running Vision API in Mock/Fallback mode (no credentials in .env).');
+  console.log('Running Gemini in Mock/Fallback mode (no GEMINI_API_KEY in .env).');
 }
 
 // ----------------- API ROUTES -----------------
@@ -286,90 +278,93 @@ app.post('/api/issues', upload.single('image'), async (req, res) => {
   }
 });
 
-// Image Analysis API (GCloud Vision with Mock fallback)
+// Image Analysis API (Gemini LLM with Mock fallback)
 app.post('/api/analyze-image', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image file uploaded' });
     }
 
-    let labelText = '';
     let category = 'Pothole';
-    let confidence = '92%';
-    let severity = 'High';
+    let title = 'New reported issue';
+    let severity = 'Medium';
+    let confidence = '85%';
 
-    if (visionClient) {
+    if (aiClient) {
       try {
-        // Run Google Vision Label Detection using the memory buffer
-        const [result] = await visionClient.labelDetection(req.file.buffer);
-        const labels = result.labelAnnotations || [];
-        
-        labelText = labels.map(l => l.description.toLowerCase()).join(' ');
-        const topLabel = labels[0];
-        if (topLabel) {
-          confidence = Math.round(topLabel.score * 100) + '%';
-        }
+        const imagePart = {
+          inlineData: {
+            data: req.file.buffer.toString('base64'),
+            mimeType: req.file.mimetype
+          }
+        };
 
-        // Map labels to categories
-        if (labelText.includes('light') || labelText.includes('lamp') || labelText.includes('electricity')) {
-          category = 'Streetlight';
-          severity = 'Medium';
-        } else if (labelText.includes('water') || labelText.includes('leak') || labelText.includes('flood') || labelText.includes('pipe')) {
-          category = 'Water';
-          severity = 'High';
-        } else if (labelText.includes('trash') || labelText.includes('waste') || labelText.includes('garbage') || labelText.includes('bin')) {
-          category = 'Waste';
-          severity = 'Low';
-        } else if (labelText.includes('tree') || labelText.includes('plant') || labelText.includes('branch') || labelText.includes('grass')) {
-          category = 'Tree / Park';
-          severity = 'Medium';
-        } else if (labelText.includes('curb') || labelText.includes('curb ramp') || labelText.includes('pavement') || labelText.includes('concrete')) {
-          category = 'Other';
-          severity = 'Medium';
-        } else {
-          category = 'Pothole';
-          severity = 'High';
-        }
+        const prompt = `
+          Analyze this civic issue photo. Output a clean JSON object containing:
+          1. "category": Must be exactly one of: "Pothole", "Streetlight", "Water", "Waste", "Tree / Park", "Other".
+          2. "title": A brief, descriptive title (e.g. "Broken streetlamp pole").
+          3. "severity": Must be exactly one of: "Low", "Medium", "High".
+          4. "confidence": Estimate your classification confidence percentage (e.g. "95%").
+          
+          Do not include markdown blocks, write only raw JSON.
+        `;
+
+        const response = await aiClient.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: [prompt, imagePart]
+        });
+
+        const resultText = response.text.trim();
+        const cleanedJson = resultText.replace(/```json|```/g, '');
+        const parsedData = JSON.parse(cleanedJson);
+
+        if (parsedData.category) category = parsedData.category;
+        if (parsedData.title) title = parsedData.title;
+        if (parsedData.severity) severity = parsedData.severity;
+        if (parsedData.confidence) confidence = parsedData.confidence;
       } catch (err) {
-        console.error('GCloud Vision API call failed, falling back to mock:', err.message);
-        visionClient = null; // force mock next time
+        console.error('Gemini LLM API call failed, falling back to mock:', err.message);
       }
     }
 
-    // Heuristics Fallback if GCP vision client is null
-    if (!visionClient) {
+    // Heuristics Fallback if Gemini client is null or call failed
+    if (!aiClient || title === 'New reported issue') {
       const filenameLower = req.file.originalname.toLowerCase();
+      confidence = '70% (Mock)';
       
       if (filenameLower.includes('light') || filenameLower.includes('lamp')) {
         category = 'Streetlight';
         severity = 'Medium';
+        title = 'Streetlight outage reported';
       } else if (filenameLower.includes('water') || filenameLower.includes('leak') || filenameLower.includes('pipe')) {
         category = 'Water';
         severity = 'High';
+        title = 'Water pipeline leakage';
       } else if (filenameLower.includes('trash') || filenameLower.includes('waste') || filenameLower.includes('garbage') || filenameLower.includes('bin')) {
         category = 'Waste';
         severity = 'Low';
+        title = 'Garbage accumulation';
       } else if (filenameLower.includes('tree') || filenameLower.includes('park') || filenameLower.includes('branch')) {
         category = 'Tree / Park';
         severity = 'Medium';
+        title = 'Fallen tree blocking path';
       } else if (filenameLower.includes('footpath') || filenameLower.includes('broken')) {
         category = 'Other';
         severity = 'Medium';
+        title = 'Damaged footpath segment';
       } else {
         category = 'Pothole';
         severity = 'High';
+        title = 'Large road pothole';
       }
     }
 
     res.json({
-      success: true,
       category,
+      title,
       severity,
-      confidence,
-      imageUrl: `/uploads/${req.file.filename}`,
-      title: `Large ${category.toLowerCase()} near pedestrian lane`
+      confidence
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
